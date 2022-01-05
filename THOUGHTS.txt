@@ -1,0 +1,437 @@
+
+
+    BUG LIST
+        1) Grid Transform autoparent adjust thingy is buggy; transforming, interpreting, transforming, then interpreting again yields bad results.
+            adjusting params of gT triggering a re-inherit MIGHT fix problem; or might exacerbate. Needs thinking. As stands, works, but fragile.
+    FEATURE LIST
+        1) Flip option for mapHelper autotile
+    WILD FUTURE OPTIMIZATION LIST
+        1) Replace heap-resident parcel data struct pointer with data struct union (of all possible data structs, they're small)?
+
+
+
+    ASCOSPEL GENERATOR VERSION THREE
+    This time for sure! ...*sigh*
+    Launched December 2021 as a successor to ASCOSPEL VERSION TWO, which implemented the sheathing model but didn't go far enough down the resizing hole.
+
+    THEORY:
+        The new model is based on a simplified rect transform system, which considers the rotational centers and anchor points of each parcel to be their geometric centers,
+        instead of their top-left corners.
+        This is our thinking: the logic behind the gates, the grids, the sheathes, etc. can be as dirty and ugly as it needs to be, as long as it
+            a) works
+            b) has the simplest possible interface to the core-parcel designer and end map user, who care about
+                1) Tiles
+                2) Gates
+                3) Level Metrics
+
+    IMPLEMENTATION TODO LIST:
+        1) New Ascospel Tiling Standard
+        2) Half-precision Transformed Rects
+
+
+    UNSOLVED PROBLEMS:
+        Gate-gazumption. The new model considers gates to be tiles, not abstract offsets. This raises a) the spectre of gate size, which was handled in the kludges of v2's
+        transform logic quite neatly, and b) an implementation difficulty with the new half-precision rect transforms.
+        --> Here's a thought. The gates are by their nature rects as well. If we allow them to be centered too, they could be handled by the rect transform logic.
+            HOWEVER, this leaves a bit of thinking up to the core-parcel designer; how do we overcome this?
+        
+
+    ON SHEATHES:
+        Sheathes were initially a separate parcel so that we could take advantage of the modularized transform logic. Under the new model, the transforms
+        are VASTLY STREAMLINED at a bit of computing expense (still cheaper than v1's ECP, no?) so if we assume EVERY PARCEL IS SHEATHED and EACH SHEATH belongs
+        to the parcel it enshrouds, then:
+            a) Sheathes can draw themselves in absolute space, and the transform logic will still correct their offset/rotation/mirroring
+            b) The recursive structure and the grid positioner need not know about sheathes; the former only needs to transmit height/topoAdj/borderAdj and the latter
+                needs only care about dimensions of the parcel overall (sheath included).
+                WE ENCOUNTER A MINOR CONCEPTUAL HITCH WITH GATE-GAZUMPTION; the recursor and the grid need knowledge of GATES at least.
+                --> This raises another reason we had sheathes as separate parcels to begin with: nonstandard base cores. Under the old system we could feed anything in.
+
+===============================================================================
+    DEC 27 (post-hedgehog realization)
+
+    Our transform logic isn't as cut-and-dry as we would like. Therefore, it behooves us to abandon the double-precision stuff and run back to v2's transform system.
+    We are a little wiser, however, as we have made the following observations:
+        1) The rect transform system, if Modularized, enables a few neat tricks, such as making GATES rects of their own (which means we don't have to care about width
+            adjustment / orientation, as the generator certainly doesn't). Hence, we should migrate the rect transform to its own file.
+            (we still have the unsatisfying width/height dependency though)
+        2) The Realizer knows not the Tree; the Tree knows not the Map; the Invoker knows only the Map; they communicate through the rect transform.
+        3) The new tiling standard is better.
+        4) Something's up with the border transforms (I think we forgot to do them at all in v2, though we didn't spot a problem, so maybe I can't find the code..?)
+    
+    Another observation about previous assumptions springs to mind even as I write, concerning sheath responsibility.
+    In v2, Sheathes were added as parcels in their own right. This allowed us to take advantage of the modular structure of transforms, but induced a problem in the recursion.
+    (recursors had to be checked for sheathhood, instead of handled uniformly). This sort of traversal must go.
+        We've been tightening our assumptions yet further; Asco v3 is built on the premise that ALL RECURSORS ARE GRIDDED.
+        Observation 1:
+            Gate-gazumption is the responsibility of the grid controller.
+        Observation 2:
+            Sheathes, Landings, and Blockage-blobs only exist to connect one rect to another UNDER THE ASSUMPTIONS OF GATE-GAZUMPTION.
+        Conclusion:
+            Sheathes, Landings, and Blockage-blobs are the responsibility of the recursing parent, NOT the returned children.
+        Confounding observation:
+            The recursor must return a flexibility score as part of the resizing process. However, this score is not used in the final realization.
+            Also, the resizing process assumes that all rects are flexible -- this implies that the landing strip, at least, is part of the child, not the parent,
+            as resizing the landing strip is how an otherwise inflexible parcel resizes.
+        SOMETHING WE FORGOT:
+            There's a reason worldBorderAdj is in levelMetrics, and topo/heightAdj aren't. The latter are purely local -- decided onsite and not handed down anywhere.
+            worldBorderAdj, however, is handed down and transformed.
+
+    So, we need to establish what information is needed at which recursive pass.
+        1) Initial decision step
+            HANDED DOWN:
+                1) Level metrics (including pre-transformed adjacency data [TODO worldBorder only (sheath not child resp.) or all (sheath child resp.)])
+                    --> needed by recursors to decide their grid contents
+            STORED AT SELF LEVEL:
+                1) Grid placement of children (simplified untransformed coords)
+                2) Children with rotation, etc. set but no translation coords yet
+                    --> NOTE: because realization is in the abstract, child can be a reference to a type of parcel, rather than a generated parcel.
+                        (i.e. the "data" pointer from v2 is conceptually meaningless THOUGH it does allow for a bit of modularity in prefabs...? Think over.)
+                3) Per-row/Per-col flex scores
+                4) Per-row/Per-col min sizes (as yet unaffecting sub-min-size children) (sent up as part of self's rect, which is what we store as children???)
+            HANDED UP:
+                1) Overall Flexibility score
+                    --> Absorbed by parent's flex score grid calcs
+                2) Overall Minimum size
+                    --> Absorbed by parent's min size grid calcs
+        2) Resizing descent
+            HANDED DOWN:
+                1) Target dimensional increase
+                    --> Absorbed by flex distribution process using at-level flex data (invoker doesn't care about top-level overall flex)
+                    --> At base level, absorbed by either abstract realizer or flex sheath
+                2) Map pointer
+        3) Realizing ascent
+            HANDED UP:
+                (Map is populated on ascent)
+                1) Gates (gates are knowable only once the dimensions of abstract parcels are set, by distribution of the flexing)
+                    --> Gates are processed by the parent if sheathing is the parent's responsibility (also gazumption MUST be the parent's responsibility)
+                (Actual dim idea scrapped; realized rects are expected to conform to the target dimensions/translations given)
+
+
+    Having written it out, we observe the following:
+
+        1) The gates have to be handed up either way, but they don't necessarily have to be stored. (Tantamount to the same if we're handing back malloced structs)
+            BUT if sheathing / gazumption is super responsibility, a parcel doesn't care about its gates at all.
+
+        2) Gates are only knowable at realization time, and therefore aren't part of the initial recursion.
+            THIS IS AN INTERESTING CONCEPTUAL PROBLEM WE HADN'T CONSIDERED. Clearly a prefab map section knows its own gates concretely (i.e. knows them at
+            selection pass) but only parrots them out at realization.
+
+        3) It doesn't really matter who handles the landing/shield if the transforms are modular. If the flex distributor observes that a given rect can't flex (or
+            doesn't want to, perhaps?) then it can shift the burden onto the landing/shield as part of the sheath realization. This would allow us to keep landings
+            out of the parcel model completely, where they have no right to be.
+        CONCLUSION FROM THE ABOVE: THE PARCEL MODEL IS MORE ABSTRACT STILL THAN WE PREVIOUSLY SUPPOSED, AS SHEATHES ARE NOT AN INTRINSIC PART OF IT.
+        FIND THE WAY TO REMOVE SHEATHING PROCESS COMPLETELY FROM THE RECURSIVE TRAVERSAL AND PLACE IT INTO BESPOKE GRID RECURSOR FUNCTIONS.
+        IS IT ALSO INDEPENDENT OF THE GRID? (There may yet be interdependencies with gazumption and adj thinking)
+        Also -- a nice advantage arising out of this is that sheath computations don't ever have to be rotated. We don't have to pass "adjusted" h-adj data down to a child,
+        and the transforming of the realized sheath is done automatically by the realization process! (although border-adj does change)
+            --> Hey, and if you want to talk modular, there's no reason (in v2) that the context had to be an ascoTileMap!
+                (though maybe we might have to deal in wrapper functions to transform the tiles --> migrate over copy, single-change, and ninepatch (MS improved!) ops.)
+        ALERT! THIS THINKING IS TOO OPTIMISTIC: SEE BELOW.
+
+        4) Some abstract flexors have constraints on the sizes they can flex to. For instance, ice-slide puzzles (using the current generator) have to have 
+            odd dimensions (? not actually sure if true but may as well be). If we can't guarantee perfect flexion for all parcel choices (and we certainly
+            can't due to fixed prefabs) it may be wise to allow the realized parcel to return an "actual dimension" less than or equal to its distributed target; the
+            difference can be made up by the landing/shield.
+            ALERT! THIS THINKING CONDITIONS THE ABOVE. SEE BELOW.
+
+        5) See point above about v2's data pointer. (ACTUALLY, AS SEEN BELOW, if we want grid modularity patterns we need that data pointer)
+        
+    One other thing: I was trawling the v2 notes and found a conceptual blurb about the L-adjacency issue. It seems that, in the absence of guarantees about minimum
+    sizes of rects and gate placements, the concept of topological adjacency is meaningless (apart from a wild pipe dream about ledge postproc). All rects (from a 
+    sheath POV) are nonadjacent, and adjacency is forced through by the gate-gazumper/sheathplacer. This may result in artificial-looking "blockage fences", but it's
+    the better way to be sure of the L-adjacency bug without size guarantees, and it's simpler not to have to think about topo-adj as well.
+    THIS MEANS, HOWEVER, THAT THE SHEATHING LOGIC IS UNDER CONSIDERATION AGAIN. TIME TO REVIEW THE OLD FILE AND MAKE SOME CHANGES...
+
+
+    Implementation path as of Dec 27:
+        1) Most abstract:
+            DONE -- Rect transform 
+                (notions of transform and dimensions; implies an integer grid)
+                ("owned" by returned children, preset with minimal dimensions, mutated by parents for placement)
+            PARCEL STRUCT DONE -- Recursive selector and realizer
+                (selector is bespoke; metrics are bespoke too (no "abstract metrics"))
+                (selector has the same signature as recursive generator, and above all the same returns)
+                (realizer needs notion of FLEX SCORES, so recursive structure needs those)
+                (realizer needs notion of MINIMUM DIMS; TARGET DIMS, etc.) (former is given by rect transform of the returned parcel)
+                IMPORTANT POINT: The placement of flexed rects is based (in our model) on the flex grid. THIS REQUIRES A NOTION OF THE SHEATH, AS THE SHEATH SIZE IMPACTS
+                PLACEMENT.
+        {
+        HOLD THE PHONE: WE'VE OVERLOOKED A MAJOR CONCEPTUAL PROBLEM.
+            If we allow rects to "disobey" their commanded sizes, then placement depends on the actual size. Therefore, we can't allow rects to disobey, unless we want
+            another level of recursion.
+
+        SO: The landing strip and blockage shield are INTRINSIC parts of the flexible parcel, as they are the constructs that allow grow-arbitrarily parcels to fit a
+            commanded size without disobedience.
+            NO DISOBEDIENCE DURING REALIZATION.
+        (found advantage: no need to transform walkways/shields)
+
+        Related sub-observation: Where in the code does the landing/shield appear? It needs no preset data, as it is decided upon in-realization.
+        Related sub-observation: landing always exists; this affects minimum dimensions. Review our minimum dimension assumptions.
+        Related sub-observation: because the landing is now child responsibility, then Gate Zero doesn't mean squat (except perhaps to the walkway realizer)
+            (Except also to the invoking context)
+        }
+
+
+        Solution to notion of sheath requirement above: The abstract realization function. It receives the self parcel, the context, and the target dimensions, and it
+        produces a final parcel by mutating the context and returning gate rects.
+
+        {
+        MINOR OVERSIGHT: Gate rects are interpreted via the parcel's topological shape, which notion we have yet to decide.
+                        Can such interpretation be left implicit, or is knowledge of the shape intrinsic to the recursion structure?
+                        (it's a metric for sure...)
+        }
+
+        Therefore the grid realization function (which is a general function, presumably, provided with a data-pointer detailing the actual topology of the self for
+        gazumption control and the grid dimensions for child handling) is just a specific case of a realization function.
+        --> Advantage: this allows for potential later additions of non-grid recursors, though such would require a rewrite of generic sheathing logic etc.
+
+            -- Therefore recursive process is defined as a realizer function signature, which takes the self parcelTree, a context, and target dimensions.
+                Realization is effected by executing the root parcel's realizer function, which is trusted to execute child parcel functions.
+                (Note: minor point; global params should be bundled with context perhaps, to save on transmission in other wise. Hard to refactor?)
+                In the grid case, said function distributes the flexes among grid members, then uses the sizes thus computed to place sheathes and realize children.
+
+        2) More concrete
+            -- Sheathing logic (height/worldborder only)
+            -- Flex distributor (separate or same with grid solver?)
+            -- Grid solver
+            -- Walkway/Shield realizer funcs (provide these with gate zero perhaps?)
+
+        One last thing to consider before we launch into implementation: GENERATION PARAMETERS (make a more specific name like "parcelGenParams"?)
+        These should be divvied up by the recursor. If we're doing patterned recursors (which we ought to do to save on repeating ourselves vis-a-vis grid logic)
+        we need to work out how the "pattern" (whatever that is) expresses division of metrics. So far, v2's kludge has two forms: serial and parallel division, with
+        the latter possessing a "shortcut" function to replace obligate locks with return locks.
+
+        Also, where does the shape appear? In v2 it was in the pattern header (stupid). We'll put it in the parcelGenParam struct for now.
+        WAIT: gazumption is easier if we remember the shape of each recursor (i.e. we don't have to make gazumption explicit for a recursor pattern, we just
+        iterate over the grid) so the shapes are now intrinsic properties of the parcels.
+
+End Dec 27: Parcel def and grid transforms done. The next steps:
+    1) work out the actual flex dist comp scheme for grid
+    2) write the grid recursor as an example of a generator function
+        --> Prereq: grid representation scheme (two dims and a list of enums?)
+    3) write a base-case generator/realizer pair (STORE GEN/REL STUFF IN THEIR OWN FILES IN A SEPARATE DIRECTORY??)
+    4) The world-border adjacency affects the fundamental grid structure sheathing process, so we can't make the metrics abstract.
+Final Thoughts:
+    a) TILE_VOID is MS Tiling. Noted in file.
+    b) Complex caves can be constructed directly using recursor grid notation; i.e. don't make it hopelessly arcane
+    c) When do we think about the height decider?
+
+Tomorrow: populate parcelGenerators subdirectory with some simple testable generator types 
+
+
+
+
+
+===============================================================================
+    Dec 28: Thinking about sheathes
+
+    Solving the L-problem by declaring everything topo-unadj is an extremely bad solution. For one, it doesn't allow pruning to increase proximity. For another, it
+    would leave huge strips of blockage strewn across the map.
+    SUBOBSERVATION: We're going to have to port in protection flags from v1 if we want any sort of complex postprocessing.
+                Though do note that we no longer have to worry about inaccessible floors -- they only arise as a result of blockage resolution and edgetracing, and are
+                described (perhaps) by floor type (though it might be useful to flag the tile as inaccessible, just to make other post possible)
+    So: We need to keep topo-adj BUT we don't need to keep it as a variable. Observe that in the v2 prototypes topoAdj was handed to one of an adjacent pair of subrects
+        with non-connecting parcel shapes. IF we maintain an invariant as to which member of these pairs (say, the top left member, for instance) then topoadj derives
+        directly from a) the shape and b) whether the parcel is on the grid's edge. Can we minimize this so we don't need to pass anything? Remember that sheathing is now
+        handled by a fully bespoke handler.
+
+    Stuff we can keep includes the height-adjacency fetcher from gridSolver in v2.
+    Also note that "worldBorderAdj" means both topoAdj and heightAdj; worldBorderAdj isn't needed by the sheather, only by some sort of preprocess.
+
+    Rebuilt the mapHelpers today; replaced clunky ninepatchrect with smooth autofiller, thanks to new standard
+
+    Task for next session:  - get some prototype base case generators/realizers online
+                            - get the generic base case online
+                            - create walkway and shield handles with basic realizers for later fleshing
+                                (create them using the same function, as it may behoove us to allow them to talk to each other)
+                                (might also behoove us to hand them gate-zero, which is otherwise lost)
+
+
+
+
+
+===============================================================================
+    Dec 29: Some more observations
+
+    1) Void shape handling transmits / requires some worldborderadj considerations.
+        a) A recursor containing a void shape can only touch the world border (hence the selector only allows it if the worldborder touches it;
+            THE SELECTOR MAY NEED TO BE ALLOWED DISCRETION OVER SETTING HFLIP AND VFLIP TO MINIMIZE SPECIAL CASES OF VOID INCURSION.
+        b) A void-shape child transmits its worldedge to adjacent children.
+        WAIT WAIT WAIT: MAJOR OVERSIGHT. IF VOIDSHAPES ARE ALLOWED IN RECURSION, THE IDEA OF A DISCRETE WORLD-BORDER-ADJ BREAKS DOWN; WE CAN'T HAVE HETEROGENEOUS
+        STATS FOR A SINGLE EDGE. THEREFORE, IF WE ADD VOIDSHAPES TO THE RECURSION, THEY MUST BE PADDED ON ALL SIDES BY EITHER a) GUARANTEED WORLDEDGE (from the levelmetric)
+        or b) OTHER CHILDREN IN THE SAME-PARENT GRID (so we can fill their worldborderadj fields directly)
+        VOIDADJ INCURSIONS ARE A LATER REFINEMENT; LEAVE THEM OUT FOR NOW.
+
+    2) Level metric division hits a bit of a snag vis-a-vis forks. Up to now we've been assuming an identical grid-handler for ALL recursors. Won't work with
+        forks vs. nonforks; so we either have to a) wrap the recursor in a metric handler that changes based on forks/nonforks (attendant transmission problems)
+        or b) add fork detection to the recursor; which would sense the presence of a fork and divide accordingly.
+        FLANGES, TOO, NEED SPECIAL LOGIC; MAJOR PROBLEM; MUST BE SOLVED IF FURTHER PROGRESS IS TO BE MADE.
+        And here's the solution: add a single integer to each grid square in the grid pattern. This denotes the GROUP of that square. The groups are referenced by a master
+        descriptor in the pattern header, which lists how many there are and whether any are shortcuts or flanges (with a bitfield, etc.).
+        All members of a single group have their metrics divided serially; each group gets a master metric derived from the source metric in parallel (with
+        flange and shortcut modifications as necessary).
+
+    3) The flex strategy is only partially known. We know that the flexibility of any row/column depends on its members. Is it the average or the minimum?
+        We know the overall flex is determined by all the rows/columns. Is it the average or the maximum?
+
+    Made no progress on previous session's "tasks for next session"
+    Added task: Since we've come up with a new concept for the metric divider, prototype it independently. Much future architecture depends on at least having a 
+    handle on the parameters, so we should definitely pump them into a standalone prototype.
+
+
+
+===============================================================================
+
+    OBSERVATIONS MADE AT THE BEACH OVER NEW YEARS:
+
+    1) Previous world-border-adjacency considerations assumed nonconcave recursors; that is, if we have void incursions we're going to need to inform the 
+        rects that share corners, as well as the sides; i.e. it shares the signature of height-adjacency, and therefore perhaps some of the logic
+
+    2) Sometimes a base rect will have a "failure" exit and a "success" exit (think bike puzzles and the seafoam island ice puzzle). The recursor logic we're
+        developing now can handle this, if these exits are understood to refer to the flange exits of shaped parcels. Change documentation later to reflect this.
+
+    3) In the same vein, we need a better understanding of path TYPES (mere "challenge ratings" aren't enough). If we tell the generator, for instance, that a rect
+        is part of a fail path or a backwards-edge loop, it can make more intelligent decisions than merely assigning arbitrary challenge to what's downstream of a ledge.
+
+    4) Blockages adjoining the world border should fill with void, then correct for impossible configurations using a CA pass.
+
+
+===============================================================================
+    Jan 2: Back on the horse in the new year
+
+    Wrote a skeleton for the genParameters; it occurs to me that the locking mechanism is bound about with reward mechanisms. After all, flange locks protect goof or
+    encounter prefabs that are very, very worth it; we established in v2's thinking that they are almost certainly set at a higher-than-generator level, as opposed to
+    permitting incidental goof to be so locked off. It behooves us therefore to link the lock to the reward somehow, so that we can finely tune at what point in the game
+    backtracking becomes possible.
+    Or not.
+    If the goof is set at the highest level, the pattern is set also and contains obligate locks protecting the goof. The backtrack lock data is only for flanges that
+    arise organically as part of the generation process, and protect moderate-level incidental goof.
+
+
+===============================================================================
+    Jan 3: CA Problemma
+
+    Just had a disquieting thought about tile-level postprocessing. Right now we have a reasonable trans-parcel post step involving the resolution of blockage tiles,
+    but all blank floor tiles are being treated as sacrosanct. This is not good. Post-factum processing should be given a notion of critical path tiles, as well as 
+    protected tile regions, and then be told to go ham on the whole thing, so as to cover up the gridlike origins of the structure.
+    The problem with this is that (general-case) unprotected floors exist only in the landing strips and, in the current incarnation, landing strips have no way of
+    knowing what the path inside them looks like.
+    Because of the nature of gates as a "residual", the gazumption step can't take place until a parcel is generated. This means that the parcel has, at present, no
+    idea of where its gate zero is going to be moved to. 
+    THIS CANNOT BE ALLOWED TO KILL THE PROJECT.
+    Possible (slightly inelegant) solution: Make the walkway a RESIDUAL grid-transform.
+    The parcel realizer is told what its target dimensions are and then
+        a) adjusts its internal offsets and realizes its own tile data, then
+        b) computes the size and shape of the walkway, then stores it in the residual data
+        c) does the same with the blockage shield.
+    When the invoking context takes the returned parcel, it
+        a) gazumps the gates from adjacent parcels, storing the original gate-zeroes somewhere (NOTE: SEE BELOW: OLD GATES NEVER MUTATED)
+        b) using the gazumped gate zeroes, the old gate zeroes, and the residual walkway, realizes the walkway (grid transform inheritance followed by general realizer).
+    The walkway realizer receives two gates, the walkway rect, the blockage rect, and the map context. It then has enough information to write a protected path, but
+    doesn't yet have to (for modular prototyping purposes).
+    DECIDED ARBITRARILY THAT THE RESIDUALS ARE IN LOCAL SPACE.
+
+    This idea places yet more burdens on the grid recursor. We're going to have to mete out some of its responsibilities to other files somehow.
+    Also, if the walkway is a residual and the burden of resolving it is placed on the invoking context, responsibilities are clouded a bit vis-a-vis nongrid recursors.
+    (but sod those; we have no intention to ever build any such).
+    The current procedure for the grid ideator is roughly:
+        1) Choose height offsets (height choice step), and compute sheath data and minimum sheath sizes and store in data struct (sheathing step)
+        2) Based on the pattern, divide the metrics. (metric div step)
+        3) Based on the pattern, generate children.
+        4) Based on the pattern, rotate and mirror children.
+        5) Compute and store per-row/per-col minimum dimensions in data struct
+        6) Compute and store per-row/per-col flex scores in data struct
+        7) Compute overall flex scores for whole parcel (unclear flex amalgam step)
+    The current procedure for the grid realizer is roughly:
+        1) divide target dimensional increases among rows and columns of grid (flex div step)
+        SEE BELOW; PROBLEM WITH INHERITANCE AND THE GRID TRANSFORM
+        2) realize child parcels
+        3) TRANSFORM CHILD GATES AND RESIDUAL WALKWAY/BLOCKAGES BY CHILD'S GRID TRANSFORM TO BRING THEM INTO ABSOLUTE SPACE
+        4) perform gate-gazumption
+        5) realize sheathes and child walkway/blockages (sheathing step)
+
+    Random other thought: we could store protection flags by abusing the tiling field of the nontiling TILE_BLANK, though that seems a bit risky.
+
+    For God's sake start work on this.
+
+
+===============================================================================
+    Jan 4: Grid recursion skeleton
+
+    Brief observation: Bridges are nongrid recursors, due to their unusual height requirements.
+
+    Now for a start on the grid recursor skeleton.
+    We don't need to worry about sheathing logic for now; all we need is to make sure that
+        a) We know where to hook in sheath dimensions into the min-dimensions/resizing code
+        b) We know where to store sheath data in the parcel data struct
+    See yesterday's notes for the outline.
+    File should be its own header/c pair, linked into the rest via parcelGenerators.h
+    Dependencies:
+        - generation parameters             (genParameters.h)
+        - parcels                           (parcel.h) (by extension gridTransform.h)
+        - map helpers (for the sheathing)   (mapHelpers.h)
+    Assistor files:
+        - sheathing logic (to decide)
+        - walkway/shield realizer           (depends on parcel.h)
+    
+    So the first step is to create the walkway/shield realizer function.
+        Dependencies: parcel.h, mapHelpers.h
+    Takes a pointer to a parcel and a gridTransform of the gazumped gate zero.
+    AT NO POINT IS THE PARCEL'S GATE ZERO MUTATED.
+
+    A THOUGHT WHICH DESERVES THOUGHT:
+        SHOULD WE BUNDLE LEVEL METRICS WITH THE PARCEL STRUCT?
+        If we do, we 
+            a) eliminate fairly redundant dependencies
+            b) eliminate a redundant parameter through the recursive structure
+            c) allow post-processing to remember which metrics generated the parcel
+                (which, for instance, allows the walkway/blockage realizer to access the global state and local locks and thereby make
+                 decisions about its content)
+    Good idea. DO SO. DONE.
+
+
+    MAJOR MAJOR OVERSIGHT: THE PARCEL RESIZING AFFECTS ITS GRID TRANSFORM.
+    BE EXPLICIT:
+    IF WE ARE TO KEEP THE CURRENT SCHEME, THE FOLLOWING OCCURS:
+        1) THE INVOKER GETS TARGET DIMENSIONS IN ITS OWN SPACE.
+        2) THE INVOKER THEN HAS TO CLOBBER THE DIMENSIONS OF THE CHILD PARCEL TO MAKE THE INHERITANCE WORK.
+        3) INHERITANCE TAKES PLACE; MIN DIM DATA IS LOST!
+
+    THEREFORE: WE KEEP MIN DIM DATA ELSEWHERE.
+    DONE.
+
+    We might later need a gate index translator to correct for parcel transforms (in the grid recursor).
+    Here's v2's code, may need a bit of editing:
+        // 1) Rotate
+        int newGateIndex = ((int)gateIndex - (int)(parcel->rotation));
+        if(newGateIndex < 0) newGateIndex += 4;
+
+        // 2) Flip
+        if(parcel->flipH) newGateIndex = (newGateIndex == 1) ? 3 : (newGateIndex == 3) ? 1 : newGateIndex; 
+        if(parcel->flipV) newGateIndex = (newGateIndex == 0) ? 2 : (newGateIndex == 2) ? 0 : newGateIndex;
+
+    Wrote what seems to be a successful hook for the walkway and blockage realizer in mapHelpers.c; really ought to be elsewhere but who gives a shit.
+
+    Next up is the grid signature.
+    Signature needs:
+        0) Number of parameter classes
+        1) Parameter class shortcut identifiers (list of booleans or bitfield?)
+        OR NOT THIS AT ALL; MERELY INT MATCHING. Negative Ints are "shortcut" paths.
+        Hm; though we have multiple such; like flange ids. May need something else, like a list of enums denoting class type
+        as well as a list of ints denoting how many rects are in each class (or we could just count that for a performance hit?)
+        WHAT'S EASIEST FOR THE PATTERN AUTHOR??????
+
+        2) Grid dimensions
+        3) Grid List of shapes
+        4) Grid List of ideator functions (or the selector)
+        5) Grid List of Parameter class IDs
+        6) Grid List of rotations and flips (positioning implicit in traversal)
+    This is shaping up to be its own header file; after all, instructions to the generator are presumably transmitted as arbitrarily complex
+    grid signatures, no?
+
+    Wrote skeletons for signatures and the grid recursor.
+    Next up: code outlines for the recursor itself, and at least one test case
+
+===============================================================================
+
+
