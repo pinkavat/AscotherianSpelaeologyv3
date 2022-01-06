@@ -87,8 +87,15 @@ void fillRectAuto(struct ascoTileMap *map, struct ascoCell *cell, struct gridTra
 
 
 
-
-
+/*
+#include <stdio.h> // TODO debug
+void printDebug(struct gridTransform *t, int x, int y, int w, int h){
+    int newX, newY, newEdgeX, newEdgeY;
+    gTCoordinate(t, x, y, &newX, &newY);
+    gTCoordinate(t, x+w, y+h, &newEdgeX, &newEdgeY);
+    printf("Drawing from (%d, %d) to (%d, %d)\n", newX, newY, newEdgeX, newEdgeY);
+}
+*/
 void realizeWalkwayAndShield(struct ascoTileMap *map, struct gridTransform *walkway, struct gridTransform *shield,
     struct gridTransform *entryGate, struct gridTransform *exitGate){
 

@@ -14,8 +14,8 @@ void testLakeIdeator(struct parcel *parcel){
     parcel->flexX = 1.0;    // Test lake absolutely wants to resize as much as possible
     parcel->flexY = 1.0;
 
-    parcel->minWidth = 4;   // Initial dimensions are minimal (width is walkway-inclusive)
-    parcel->minHeight = 3;
+    parcel->minWidth = 3;   // Initial dimensions are minimal (width is walkway-inclusive)
+    parcel->minHeight = 2;  // Height is NOT shield-inclusive, shields are optional
 
     parcel->children = NULL;
     parcel->childCount = 0;
@@ -46,9 +46,9 @@ void testLakeRealizer(void *context, struct parcel *parcel){
     
             // Set shield
             parcel->shield = newGridTransform();
-            parcel->shield.x = parcel->walkway.width;
+            //parcel->shield.x = parcel->walkway.width;
             parcel->shield.width = parcel->transform.width - parcel->walkway.width;
-            parcel->shield.height = 1;
+            parcel->shield.height = 0;  // NOTE: NO SHIELD
             
             // Draw lake core
             struct ascoCell blankFloorCell = {TILE_WATER, 0, 0, 0};

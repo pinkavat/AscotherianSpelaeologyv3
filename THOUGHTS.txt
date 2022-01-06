@@ -5,8 +5,11 @@
     BUG LIST
         1) Grid Transform autoparent adjust thingy is buggy; transforming, interpreting, transforming, then interpreting again yields bad results.
             adjusting params of gT triggering a re-inherit MIGHT fix problem; or might exacerbate. Needs thinking. As stands, works, but fragile.
+
     FEATURE LIST
         1) Flip option for mapHelper autotile
+        2) "waterworld" grid recursor kitbash
+
     WILD FUTURE OPTIMIZATION LIST
         1) Replace heap-resident parcel data struct pointer with data struct union (of all possible data structs, they're small)?
 
@@ -412,7 +415,7 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
         if(parcel->flipH) newGateIndex = (newGateIndex == 1) ? 3 : (newGateIndex == 3) ? 1 : newGateIndex; 
         if(parcel->flipV) newGateIndex = (newGateIndex == 0) ? 2 : (newGateIndex == 2) ? 0 : newGateIndex;
 
-    Wrote what seems to be a successful hook for the walkway and blockage realizer in mapHelpers.c; really ought to be elsewhere but who gives a shit.
+    Wrote what seems to be a successful hook for the walkway and blockage realizer in mapHelpers.c; really ought to be elsewhere but hey.
 
     Next up is the grid signature.
     Signature needs:
@@ -446,7 +449,31 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
     Amalgamating the flex scores is harder (need-to-know parcel array, etc.)
     What representation for row/column notation?
 
+    Finished the ideator today.
 
+    Had an interesting thought for a FUTURE CHANGE: "waterworlds". There's no reason why the grid recursor logic can't be kitbashed into something
+    capable of stringing multiple water bodies together, with waterfalls as staircases. We originally thought that it was impossible, but we were thinking
+    about it from the wrong direction -- lake expansion isn't a post-process, it's baked into the recursive structure.
+    Such an approach -- paired with void-incursion -- could lead to very fiddly geometry indeed even without postprocessing.
+        
 
 
 ===============================================================================
+    Jan 6: The grid realizer (sans sheathes)
+
+    Found something we hadn't considered vis minimum size. See "Bug list" up top; it's the one to do with minimum size of the base case.
+    The base case can't be implicitly inclusive of its walkway; it has to be explicitly inclusive.
+
+    SOLVED; however we've noted that SHIELDS ARE OPTIONAL; the MINIMUM SIZE MUST NEVER INCLUDE THEM. Remember that topological blocking is handled by sheathes,
+    NOT shields. Shields are just padding. If a generator can fill its parcel without using a shield, all the better.
+
+    The grid realizer is up and running, and, bar some weird hiding bugs, seems to work fine.
+    Next step, I suppose, is getting some actual topology into this thing and getting the sheathes/gates/gate-gazumption online.
+
+    So: we need to think about:
+        a) Gates. They are represented by rect transforms, but what guarantees are made about them that we can count on?
+            Also, we need to port over v2's gate index transformer; we can't avoid it. Fortunately we're free from the burden of inversion/offset change, etc.
+    
+    Thoughts about gates:
+        1) Note that even though the generators care about a uniform minimum gate size, the actual gazumption process can't.
+            Reason being that RS-stairs are gates of alternative width,     

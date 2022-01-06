@@ -3,6 +3,9 @@
 // baseCase.c
 // See header for details
 
+#define CORE_WIDTH 1
+#define CORE_HEIGHT 1
+
 
 void baseCaseIdeator(struct parcel *parcel){
 
@@ -14,8 +17,8 @@ void baseCaseIdeator(struct parcel *parcel){
     parcel->flexX = 0.0;    // If we hit this base case we don't want to make it any more obvious
     parcel->flexY = 0.0;    //  hence it doesn't want to grow any bigger
 
-    parcel->minWidth = 1;   // Initial dimensions are minimal (width is walkway-inclusive)
-    parcel->minHeight = 1;  // TODO may need to consult global params about minimum gate size...?
+    parcel->minWidth =  CORE_WIDTH + 1; // Initial dimensions are minimal (width is walkway-inclusive)
+    parcel->minHeight = CORE_HEIGHT;    // TODO may need to consult global params about minimum gate size...?
 
     parcel->children = NULL;
     parcel->childCount = 0;
@@ -41,18 +44,18 @@ void baseCaseRealizer(void *context, struct parcel *parcel){
 
             // Set walkway
             parcel->walkway = newGridTransform();
-            parcel->walkway.width = parcel->transform.width - parcel->minWidth;
+            parcel->walkway.width = parcel->transform.width - CORE_WIDTH;
             parcel->walkway.height = parcel->transform.height;
     
             // Set shield
             parcel->shield = newGridTransform();
             parcel->shield.x = parcel->walkway.width;
-            parcel->shield.width = parcel->minWidth;
-            parcel->shield.height = parcel->transform.height - parcel->minHeight;
+            parcel->shield.width = CORE_WIDTH;
+            parcel->shield.height = parcel->transform.height - CORE_HEIGHT;
             
             // Draw blank floor core
-            struct ascoCell blankFloorCell = {TILE_BLANK, 0, 0, 0};
-            fillRect(map, &blankFloorCell, &(parcel->transform), parcel->walkway.width, parcel->shield.height, parcel->minWidth, parcel->minHeight); 
+            struct ascoCell blankFloorCell = {TILE_UNKNOWN, 0, 0, 0};   // TODO changed to unknown for debug purposes
+            fillRect(map, &blankFloorCell, &(parcel->transform), parcel->walkway.width, parcel->shield.height, CORE_WIDTH, CORE_HEIGHT); 
 
         break;
         case XL_SHAPE: case XI_SHAPE:

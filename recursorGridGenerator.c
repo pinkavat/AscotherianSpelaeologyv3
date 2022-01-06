@@ -4,8 +4,7 @@
 // See header for details
 
 
-// TODO static memory managers for the data struct
-
+// ==================== HELPERS ====================
 
 // TODO strategy one for flex score amalgamation: INDIVIDUAL row/col score is AVERAGE of all subscores.
 // Helper for both ideator and realizer; computes row/col min dimensions and flex scores of children
@@ -44,6 +43,33 @@ static void computeMinDimsAndFlexScores(struct parcel *children, int *minColDims
 
 
 
+
+// TODO strategy one: individual row/col score is average of all subscores.
+// Helper for the realizer; distributes one dimensional increase based on the flex scores of either a row or a column
+// Obvious precondition: length is at least one (and both arrays have said length)
+static void distributeDimensionalIncreases(int increase, int *dimensions, float *flexes, int length){
+    // 1) Sum flex values
+    float sumFlexes = 0.0;
+    for(int i = 0; i < length; i++) sumFlexes += flexes[i];
+
+    // 2) For each cell in the line, add a proportional amount of the increase to its dimension
+    int remainder = increase;
+    for(int i = 0; i < length; i++){
+        int addedIncrease = ((float)increase * (flexes[i] / sumFlexes));
+        dimensions[i] += addedIncrease;
+        // ...and subtract it from the remainder
+        remainder -= addedIncrease;
+    }
+    
+    // 3) In the event that the increase doesn't divide perfectly, the first cell eats the remainder
+    dimensions[0] += remainder;
+}
+
+
+
+
+// ==================== IDEATOR ====================
+
 void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *signature){
     /*TODO notes
         The current procedure for the grid ideator is roughly:
@@ -61,7 +87,10 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
 
     // 1) Set the realizer and data fields
     parcel->realizer = &recursorGridRealizer;
-    //parcel->data = new
+    parcel->data = (void *)malloc(sizeof(struct recursorGridDataStruct));
+    struct recursorGridDataStruct *dataStruct = (struct recursorGridDataStruct *)(parcel->data);
+    // Copy over signature
+    dataStruct->signature = *signature;
 
     // 2) Allocate child memory
     parcel->childCount = signature->width * signature->height;
@@ -73,6 +102,8 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
     for(int i = 0; i < parcel->childCount; i++){
         // TODO parameter division
         parcel->children[i].shape = signature->shapes[i];
+        // TODO temp fractal deepener for debug
+        parcel->children[i].parameters.recursionDepth = parcel->parameters.recursionDepth + 1;
 
         // Generate child
         (*(signature->populatorFunctions[i]))(&(parcel->children[i]));
@@ -89,6 +120,7 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
     int minRowDims[signature->height];
     float xFlexes[signature->width];
     float yFlexes[signature->height];
+    // TODO this function will need a handle for sheath data also
     computeMinDimsAndFlexScores(parcel->children, minColDims, minRowDims, xFlexes, yFlexes, signature->width, signature->height);
 
     // 7) Establish overall minimum dimensions and flex scores
@@ -113,18 +145,120 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
 }
 
 
+
+
+
+
+
+
+
+// ==================== REALIZER ====================
+
 void recursorGridRealizer(void *context, struct parcel *parcel){
     /*TODO notes
     The current procedure for the grid realizer is roughly:
-        1) divide target dimensional increases among rows and columns of grid (flex div step)
-        2) Position children accordinly (translate, then inherit)
-        3) realize child parcels
+        1) DONE divide target dimensional increases among rows and columns of grid (flex div step)
+        2) DONE Position children accordinly (translate, then inherit)
+        3) DONE realize child parcels
         4) TRANSFORM CHILD GATES AND RESIDUAL WALKWAY/BLOCKAGES BY CHILD'S GRID TRANSFORM TO BRING THEM INTO ABSOLUTE SPACE
         5) perform gate-gazumption
         6) realize sheathes and child walkway/blockages (sheathing step)
 
     */
 
-    // TODO deallocate child memory
+    // Cast context
+    struct ascoTileMap *map = (struct ascoTileMap *)context;
+    struct recursorGridDataStruct *dataStruct = (struct recursorGridDataStruct *)(parcel->data);
+    struct recursorGridSignature *signature = &(dataStruct->signature);
+
+
+    // 1) Recompute row/col dimensions and flex scores
+    int colDims[signature->width];
+    int rowDims[signature->height];
+    float xFlexes[signature->width];
+    float yFlexes[signature->height];
+    // TODO this function will need a handle for sheath data also
+    computeMinDimsAndFlexScores(parcel->children, colDims, rowDims, xFlexes, yFlexes, signature->width, signature->height);
+
+
+    // 2) Distribute dimensional increases across rows and columns
+    distributeDimensionalIncreases(parcel->transform.width - parcel->minWidth, colDims, xFlexes, signature->width);     // x
+    distributeDimensionalIncreases(parcel->transform.height - parcel->minHeight, rowDims, yFlexes, signature->height);  // y
+
+
+    // 3) Distribute dimensional increases across individual child parcels
+    // 4) ...and translate children while we have a loop open for old time's sake
+    int translationCursorX = 0;
+    int translationCursorY = 0;
+    // 5) ...and realize the child parcels as well, come to think of it
+    // 6) ...and why not round it off by realizing the child's walkway and shield here too
+    for(int y = 0; y < signature->height; y++){
+        for(int x = 0; x < signature->width; x++){
+
+            struct parcel *child = &(parcel->children[(y * signature->width) + x]);
+
+            // 3a) Fetch new width and height
+            int newWidth = colDims[x];
+            int newHeight = rowDims[y];
+
+            // 3b) Transform to match child
+            if(child->transform.rotation & 1){
+                int temp = newWidth;
+                newWidth = newHeight;
+                newHeight = temp;
+            }
+
+            // 3c) Apply width and height to child
+            child->transform.width = newWidth;
+            child->transform.height = newHeight;
+
+
+
+            // 4a) Apply child translation
+            // TODO note! this is where the child's sheath affects its offset
+            child->transform.x = translationCursorX;
+            child->transform.y = translationCursorY;
+
+            // Move the "translation cursor" to the top-left corner of the next cell in the row
+            translationCursorX += colDims[x];
+
+
+            // 5a) Finalize child's transform by inheriting from ours, placing it into our space (which is made global by our invoker)
+            gTInherit(&(parcel->transform), &(child->transform));
+            // 5b) Realize child parcel
+            child->realizer(context, child);
+
+            // 6a) Handle child's walkway and shield
+            gTInherit(&(child->transform), &(child->walkway));
+            gTInherit(&(child->transform), &(child->shield));
+            // TODO gate params
+            realizeWalkwayAndShield(map, &(child->walkway), &(child->shield), &(child->walkway), &(child->walkway));
+
+        }
+
+        // Reset "translation cursor" to first column and move down a row
+        translationCursorX = 0;
+        translationCursorY += rowDims[y];
+    }
+
+
+    // 7) Generate my own residuals
+
+    // Set walkway (TODO)
+    parcel->walkway = newGridTransform();
+    parcel->walkway.width = 0;
+    parcel->walkway.height = 0;
+
+    // Set shield (no shield should exist in a grid recursor at all)
+    parcel->shield = newGridTransform();
+
+    // TODO gates
+
+
+
+    // Lastly, deallocate child memory
+    free(parcel->children);
+    // ... and data struct
+    free(parcel->data);
 }
 
