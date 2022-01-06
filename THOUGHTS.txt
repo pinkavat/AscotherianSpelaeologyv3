@@ -1,4 +1,6 @@
 
+    TODO REMOVE FROM GIT IF WE MAKE THE CODE PUBLIC
+
 
     BUG LIST
         1) Grid Transform autoparent adjust thingy is buggy; transforming, interpreting, transforming, then interpreting again yields bad results.
@@ -430,8 +432,21 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
     grid signatures, no?
 
     Wrote skeletons for signatures and the grid recursor.
+
+    Had a midnight thought about a very inefficient "smart brush" tool for autotiles.
+    Makes a mask -- any tiles of the type placed during the brush pass are marked on the mask and autotile with other tiles so marked.
+
     Next up: code outlines for the recursor itself, and at least one test case
 
 ===============================================================================
+    Jan 5: The grid recursor (sans sheathes)
+
+    Basic stuff so far all seems good; the next step to attempt is moving/outsourcing flex division (even into a static func in the gridfile is better)
+    The gist is this: a representation of row/column dimensions, which the function takes in and modifies based on row/column flex scores.
+    Amalgamating the flex scores is harder (need-to-know parcel array, etc.)
+    What representation for row/column notation?
 
 
+
+
+===============================================================================

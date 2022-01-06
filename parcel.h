@@ -38,6 +38,15 @@
 * written December 2021
 */
 
+// Macros for determining the MINIMUM dimensions in absolute space of a parcel
+// (lifted wholesale from gridTransforms as part of the minDims kludge)
+#define parcelAbsMinWidth(p) (((p)->transform.rotation & 1) ? (p)->minHeight : (p)->minWidth)
+#define parcelAbsMinHeight(p) (((p)->transform.rotation & 1) ? (p)->minWidth : (p)->minHeight)
+
+// Ditto for the flex scores
+#define parcelAbsFlexX(p) (((p)->transform.rotation & 1) ? (p)->flexY : (p)->flexX)
+#define parcelAbsFlexY(p) (((p)->transform.rotation & 1) ? (p)->flexX : (p)->flexY)
+
 
 /* Realization function:
 *       In order to convert the parcel from an abstract representation to a concrete one, each parcel needs a realizer. This function

@@ -25,7 +25,16 @@
 
 // ========== DATA STRUCT ==========
 
-//  TODO: must store a copy of the signature, minimum row/column dimensions, row/column flex scores, and sheath data for each cell
+struct recursorGridDataStruct {
+    struct recursorGridSignature signature;     // A copy of the signature struct for which this grid was generated
+    
+    // On further reflection, it's probably better to recompute flex scores / minimum dimensions.
+    // I anticipate that the grids will be mostly small, so it's unwise to burden malloc.
+    // Also, in a mad future universe where the data-struct is a union rather than heap-resident, we'd want to eliminate this sort of thing anyway.
+
+    // TODO sheath data
+    
+};
 
 // ==========   IDEATOR   ==========
 
