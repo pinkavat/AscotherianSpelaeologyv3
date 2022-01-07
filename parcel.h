@@ -23,8 +23,9 @@
 *       NOTE: Z was snuck into the gridTransform struct. It's not strictly part of gridTransform, but putting it there simplifies some helper ops immensely.
 *
 *   The parcel also has space for storing "residual" data. These data are not set until realization, but need to be known by an invoking context.
-*   These data include gates (whose interpretation is derived from the Parcel Shape [see below]),
-*       and also two grid transforms describing the entry walkway and the optional blockage shield.
+*   These data include gates:
+*       Gates are grid transforms guaranteed to a) be only one unit thick and b) lie just inside (on) their corresponding edge of the parcel.
+*   The data also include the sizes of the entry walkway and the optional blockage shield:
 *       Due to the need for the generator to set tile-level permissions to enable smart postprocessing, the parcel cannot generate its own
 *       walkway and shield; it needs to know where the adjacent parcel's exit gate connects to its entry to draw the path.
 *       Hence, the parcel realizes its own content, then merely describes the area occupied by the walkway and shield as a residual, to be realized
@@ -82,11 +83,13 @@
 *       I enters through gate 0 and leaves through gate 2
 *       TL enters through gate 0 and leaves through gate 1, with gate 2 being a flange
 *       TI enters through gate 0 and leaves through gate 2, with gate 1 being a flange
+*
+*       There were two more, but they were removed due to conceptual complications with the blockage shield:
 *       XL enters through gate 0 and leaves through gate 1, with gates 2 and 3 being flanges
 *       XI enters through gate 0 and leaves through gate 2, with gates 1 and 3 being flanges
 *
 */
-enum parcelShapes {V_SHAPE, E_SHAPE, L_SHAPE, I_SHAPE, TL_SHAPE, TI_SHAPE, XL_SHAPE, XI_SHAPE};
+enum parcelShapes {V_SHAPE, E_SHAPE, L_SHAPE, I_SHAPE, TL_SHAPE, TI_SHAPE /*, XL_SHAPE, XI_SHAPE*/};
 
 
 
@@ -122,11 +125,10 @@ struct parcel {
 
     // These fields are "residue"; populated by the realizer function and used by the invoker's realizer
 
-    struct gridTransform gates[4];      // Up to four (number given by shape) gates, in parcel-local space, from left clockwise. 
+    struct gridTransform gates[3];      // Up to three (number given by shape) gates, in parcel-local space, from left counterclockwise. 
 
-    struct gridTransform walkway;       // A rectangular region in parcel-local space describing the walkway of the parcel.
-    struct gridTransform shield;        // Likewise, for the shield.
-
+    int walkwayWidth;                   // The width of this parcel's walkway
+    int shieldHeight;                   // The height of this parcel's shield
 };
 
 

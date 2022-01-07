@@ -78,10 +78,13 @@ struct ascoTileMap {
 #define PRINT_COLOUR_WATER "\e[38;5;33m\e[48;5;20m"
 
 static struct ascoTile ascoTiles[] = {
-    {"Tile_Void",       "  ", "\e[0m",                  ASCO_TILING_MS},
-    {"Tile_Unknown",    "??", "\e[38;5;13m\e[7m",       ASCO_TILING_NONE},
-    {"Tile_Blank",      "  ", "",                       ASCO_TILING_NONE},
-    {"Tile_Blockage",   "XX", "\e[38;5;160m\e[1m",      ASCO_TILING_NONE},
+    {"Tile_Void",       "  ", "\e[0m",                  ASCO_TILING_MS},        // The edge of the map; blends smoothly with the absence of a tilemap
+    {"Tile_Unknown",    "??", "\e[38;5;13m\e[7m",       ASCO_TILING_NONE},      // A tile of unrecognized nature; used as a fallback
+    {"Tile_Unresolved", "??", "\e[38;5;240m",           ASCO_TILING_NONE},      // Procedural generation can place anything here as long as it does not obstruct
+    {"Tile_Blockage",   "XX", "\e[38;5;160m\e[1m",      ASCO_TILING_NONE},      // Procedural generation can place anything here but it must obstruct
+
+    {"Tile_Blank",      "  ", "",                       ASCO_TILING_NONE},      // A flat floor; from the generator's point of view, obligatorily blank
+                                                                                //              (i.e. on a critical path, otherwise use Tile_Unresolved)
 
     {"Tile_Cliff",      "!!", PRINT_COLOUR_ROCK,        ASCO_TILING_MS},
     {"Tile_Stair",      "!!", "\e[1m\e[38;5;7m",        ASCO_TILING_MS},
@@ -93,12 +96,14 @@ static struct ascoTile ascoTiles[] = {
 // These definitions take the place of the cumbersome enums of yore
 #define TILE_VOID &ascoTiles[0]
 #define TILE_UNKNOWN &ascoTiles[1]
-#define TILE_BLANK &ascoTiles[2]
+#define TILE_UNRESOLVED &ascoTiles[2]
 #define TILE_BLOCKAGE &ascoTiles[3]
 
-#define TILE_CLIFF &ascoTiles[4]
-#define TILE_STAIR &ascoTiles[5]
-#define TILE_WATER &ascoTiles[6]
+#define TILE_BLANK &ascoTiles[4]
+
+#define TILE_CLIFF &ascoTiles[5]
+#define TILE_STAIR &ascoTiles[6]
+#define TILE_WATER &ascoTiles[7]
 
 
 

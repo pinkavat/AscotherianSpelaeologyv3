@@ -7,6 +7,7 @@
 #include "parcel.h"
 #include "parcelGenerators.h"
 #include "mapHelpers.h"
+#include "walkwayAndShield.h"
 #include "parcelSelector.h"
 
 // TODO makefile
@@ -63,7 +64,7 @@ int main(int argc, char **argv){
     // (set with unknowns to check, as void is hard to see)
     for(int y = 0; y < map->height; y++){
         for(int x = 0; x < map->width; x++){
-            map->cells[(y * map->width) + x].tile = TILE_UNKNOWN;
+            map->cells[(y * map->width) + x].tile = TILE_VOID;
         }
     }
 

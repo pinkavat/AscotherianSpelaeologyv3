@@ -191,7 +191,6 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     int translationCursorX = 0;
     int translationCursorY = 0;
     // 5) ...and realize the child parcels as well, come to think of it
-    // 6) ...and why not round it off by realizing the child's walkway and shield here too
     for(int y = 0; y < signature->height; y++){
         for(int x = 0; x < signature->width; x++){
 
@@ -227,13 +226,6 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             gTInherit(&(parcel->transform), &(child->transform));
             // 5b) Realize child parcel
             child->realizer(context, child);
-
-            // 6a) Handle child's walkway and shield
-            gTInherit(&(child->transform), &(child->walkway));
-            gTInherit(&(child->transform), &(child->shield));
-            // TODO gate params
-            realizeWalkwayAndShield(map, &(child->walkway), &(child->shield), &(child->walkway), &(child->walkway));
-
         }
 
         // Reset "translation cursor" to first column and move down a row
@@ -242,15 +234,46 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     }
 
 
+    // 6) The Gate-gazumption process
+    /* TODO notes
+                The grid recursor iterates over every child parcel.
+                gTInherit all the child's gates, bringing them into parentspace.
+                    (do we check for shape or just blindly run gTInherit on all gates? Checking might save us a deal of work)
+                If the parcel is (of type V or) of rotation 0 and on the left edge of the grid, sheathe it and move on (no other parcel is imposing its will)
+                (otherwise)
+                Find the parcel facing this parcel's gate zero (index translation to get the direction, then a bounds check perhaps (though this would only
+                come into play in malformed parcels, no?)
+                Find the gate facing this parcel in the other parcel (index translation of the other parcel)
+                Hand both these gates to the walkway realizer.
+                Hand the second parcel's gate to the sheather as the first parcel's gate zero (this can be where the sheather is invoked; be sure also to invoke
+                it if the parcel doesn't inherit (is on the edge or is type V))
+    */
+    for(int y = 0; y < signature->height; y++){
+        for(int x = 0; x < signature->width; x++){
+
+            struct parcel *child = &(parcel->children[(y * signature->width) + x]);
+
+            // 6a) 
+
+
+
+
+            // Handle child's walkway and shield
+            realizeWalkwayAndShield(map, child);
+            // TODO gate params
+        }
+    }
+
+
+
     // 7) Generate my own residuals
 
     // Set walkway (TODO)
-    parcel->walkway = newGridTransform();
-    parcel->walkway.width = 0;
-    parcel->walkway.height = 0;
+    parcel->walkwayWidth = 0; 
 
     // Set shield (no shield should exist in a grid recursor at all)
-    parcel->shield = newGridTransform();
+    parcel->shieldHeight = 0;
+
 
     // TODO gates
 

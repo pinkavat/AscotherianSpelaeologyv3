@@ -9,9 +9,11 @@
     FEATURE LIST
         1) Flip option for mapHelper autotile
         2) "waterworld" grid recursor kitbash
+        3) Some sort of error handler (mostly to deal with malformed signatures (or we could sidestep them with a later "signature validity checker"))
 
     WILD FUTURE OPTIMIZATION LIST
         1) Replace heap-resident parcel data struct pointer with data struct union (of all possible data structs, they're small)?
+        2) Is recomputing the min dim data for the grid recursor actually cheaper than storing it?
 
 
 
@@ -472,8 +474,94 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
 
     So: we need to think about:
         a) Gates. They are represented by rect transforms, but what guarantees are made about them that we can count on?
+            --> In parcel.h, we've chosen this: gates are always one tile thick and lie on the edge of the parcel, inside it.
             Also, we need to port over v2's gate index transformer; we can't avoid it. Fortunately we're free from the burden of inversion/offset change, etc.
     
     Thoughts about gates:
         1) Note that even though the generators care about a uniform minimum gate size, the actual gazumption process can't.
-            Reason being that RS-stairs are gates of alternative width,     
+            Reason being that RS-stairs are gates of alternative width. The gazumper must operate at any size (within reason; for instance, we can guarantee that
+            if we project a gate onto its owner, it will fall within the owner's bounds in that dimension)
+        2) The gazumption process works as follows:
+            The grid recursor iterates over every child parcel.
+                gTInherit all the child's gates, bringing them into parentspace.
+                    (do we check for shape or just blindly run gTInherit on all gates? Checking might save us a deal of work)
+                If the parcel is (of type V or) of rotation 0 and on the left edge of the grid, sheathe it and move on (no other parcel is imposing its will)
+                (otherwise)
+                Find the parcel facing this parcel's gate zero (index translation to get the direction, then a bounds check perhaps (though this would only
+                come into play in malformed parcels, no?)
+                Find the gate facing this parcel in the other parcel (index translation of the other parcel)
+                Hand both these gates to the walkway realizer.
+                Hand the second parcel's gate to the sheather as the first parcel's gate zero (this can be where the sheather is invoked; be sure also to invoke
+                it if the parcel doesn't inherit (is on the edge or is type V))
+        3) The gazumption process implies a bit about the structure of the sheather:
+            It takes some description of the sheath, plus up to three gates, and renders into the map. Ideally we'd want to hide parcel from it, and put it in a
+            separate file.
+
+    Deleted X-shapes today.
+
+    SO. SHEATHES. TIME TO RETHINK THE DREADED LOGIC AND PORT THE SHEATHES OVER ONCE AND FOR ALL.
+        Sheathes are their own thing, depending on the following:
+            1) Height adjacency, custom-computed by their invoker
+            2) World-border-adjacency, either derived from genParams or custom-computed.
+            3) Grid Transforms: no matter how they react to their children, sheathes exist in parent-space.
+                NOTE: this could just mean that they reuse their parent's transform
+            4) Topo-adjacency ???
+    PERHAPS IT'S TIME FOR A NEW IDEA. After all, if the grid recursor controls the sheathes, it can control all of them at once. Not sure what the implications of this are.
+    Probably nothing useful.
+    Why did we abandon the idea of sheathes as separate parcels in the first place?
+    It's not quite clear.
+    HEY: Don't abandon the idea of sheathes being parcels themselves just because rewriting would hew too closely to v2.
+    The only conceptual muddiness I can see is gate-gazumption and its implications for walkway cell-level writing.
+    Also, sheathes aren't really parcels, conceptually. They merely look like them.
+    After all, a sheath:
+        1) Can only ever have one child
+        2) Isn't returned by the parcel selector
+        3) Depends for its realization on data that is a level above in the recursion
+        4) Doesn't flex meaningfully; DOESN'T PROVIDE WALKWAYS OR SHIELDS
+
+    So. Sheathes are not part of the parcel tree. Instead, they are grid transforms, fed data from a pool held by their invoker (in our case, only a grid recursor)
+    Operations involving sheathes:
+        1) Computation of sheath data           (adjacencies, shape?)
+        2) Fetching of dimensional burdens      (nothing)
+        3) Fetching of core offset              (nothing)
+        4) Realization                          (map context, transform must inherit from grid parent, gates!!!)
+
+
+    HOLD ON. MAYBE HAVING SHEATHES AS THEIR OWN PARCELS IS A GREAT IDEA.
+    After all, this way the landing strip/blockage is AUTOMATICALLY HANDLED which is one heck of a boon.
+    --> not only automatically handled, but actually shunted into its own parcel, which gives us total modularity and makes the gate-gazumption even simpler
+    --> although there's no such thing as "walkway ideation..."
+    Only conceptual hurdle: the realization resizing step.
+    In the existing model, we know how to place parcels in the grid because they are guaranteed to be their expected size.
+    All along we thought that meant that if the parcel was the wrong size, it could correct by adjusting its walkways itself. But how could a parcel know if it
+    can't be the required size except by realizing itself? All we need to eliminate this flaw is the following: a sheath that knows what size constraints its
+    core-child is under.
+    What constraints could those be?
+        --> Fixed size: core is fixed in size
+        --> Totally variable size: core can be any size
+        --> Incrementally variable size: core's size varies in known increments (i.e. core ends up being even-dimensioned, say)
+    ~~~although, we could have the SAME EFFECT FROM A HELPER FUNCTION SET THAT IS ACCESSED BY THE PARCEL GENERATORS.
+        This is better; it means we can keep sheathes as their own weird thing.
+    So, no sheathes as their own parcels.
+
+
+    PROBLEM: GATE TRANSFER BETWEEN PARCELS ISN'T AS CUT-AND-DRY AS IT SEEMS...
+    We can get both gates in parentSpace but NOT in walkwaySpace, where they need to be.
+    Hmm. Our only option, it seems, is a REVERSE INHERIT: place the gate in the walkway's coordinate space.
+    This is a terrible, terrible idea.
+    May be easier to run back to the gate representation from v2...
+    So: here's the use case: We have a "gate" in one grid transform, along one of its edges. It shares this edge with another grid transform, which is the same size
+    along that edge always. Ergo we can flipflop between the two however we like.
+    MAJOR HELPFUL OBSERVATION:
+        THE SHIELD AND THE WALKWAY ARE NOT TWO GRID TRANSFORMS IN THEIR OWN RIGHT; THE'YRE MERELY TWO NUMBERS (incursions!) IN THEIR OWNER PARCEL SPACE, HANDLED BY
+        A SEPARATE FUNCTION.
+    THUS ALL WE NEED TO DO IS GET THE GATES IN PARCELSPACE.
+    REWRITE THE WALKWAY CREATOR AS A SEPARATE FILE THAT RUNS ON PARCELS.
+    Done. Walkways/shields are now no longer gridTransforms.
+    It's getting more and more like we barely had to do anything to v2...........
+    Ah well. Don't let that stop you.   
+ 
+    GO BACK TO v2; REWORK THE LOGIC FOR LEFTSIDE ZERO; REINTRODUCE DEGREE-FOUR GATES(?)
+    
+                    
+===============================================================================

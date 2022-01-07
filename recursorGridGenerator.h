@@ -1,6 +1,8 @@
 #ifndef RECURSOR_GRID_GENERATOR
 #define RECURSOR_GRID_GENERATOR
 
+#include "parcel.h"
+#include "walkwayAndShield.h"
 #include "mapHelpers.h"
 #include "recursorGridSignature.h"
 

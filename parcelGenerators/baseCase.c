@@ -37,11 +37,12 @@ void baseCaseRealizer(void *context, struct parcel *parcel){
     // The base case must be able to handle all possible shapes
     switch(parcel->shape){
         case V_SHAPE:
-            // TODO ?????
+            // TODO ???
         break;
         case E_SHAPE: case L_SHAPE: case I_SHAPE:
         case TL_SHAPE: case TI_SHAPE:
 
+            /* TODO RELIC CODE REMOVE
             // Set walkway
             parcel->walkway = newGridTransform();
             parcel->walkway.width = parcel->transform.width - CORE_WIDTH;
@@ -56,21 +57,24 @@ void baseCaseRealizer(void *context, struct parcel *parcel){
             // Draw blank floor core
             struct ascoCell blankFloorCell = {TILE_UNKNOWN, 0, 0, 0};   // TODO changed to unknown for debug purposes
             fillRect(map, &blankFloorCell, &(parcel->transform), parcel->walkway.width, parcel->shield.height, CORE_WIDTH, CORE_HEIGHT); 
+            */
 
-        break;
-        case XL_SHAPE: case XI_SHAPE:
-            // X-shapes don't have the upper blockage shield (TODO true?)
-            // TODO more thought is needed, perhaps X-shapes need to go as they may break assumptions
+            parcel->walkwayWidth = parcel->transform.width - CORE_WIDTH;
+            parcel->shieldHeight = parcel->transform.height - CORE_HEIGHT;
+
+            struct ascoCell blankFloorCell = {TILE_UNKNOWN, 0, 0, 0};   // TODO changed to unknown for debug visualizer purposes
+            fillRect(map, &blankFloorCell, &(parcel->transform), parcel->walkwayWidth, parcel->shieldHeight, CORE_WIDTH, CORE_HEIGHT); 
+
+
         break;
     }
 
-    // Set gates
+    // Set gates (TODO!!)
     parcel->gates[0] = newGridTransform();
-    parcel->gates[0].x = parcel->walkway.width;
-    parcel->gates[0].y = parcel->shield.height;
+    parcel->gates[0].x = parcel->walkwayWidth;
+    parcel->gates[0].y = parcel->shieldHeight;
     parcel->gates[0].width = parcel->minWidth;
     parcel->gates[0].height = parcel->minHeight;
     parcel->gates[1] = parcel->gates[0];
     parcel->gates[2] = parcel->gates[0];
-    parcel->gates[3] = parcel->gates[0];
 }
