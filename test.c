@@ -10,7 +10,7 @@
 #include "walkwayAndShield.h"
 #include "parcelSelector.h"
 
-// TODO makefile
+// TODO makefile (with define for cairo rendering)
 
 // Cairo renderer
 // Compile with -I/opt/local/include/cairo -L/opt/local/lib -lcairo -lm -std=c11 cairoRenderer/cairoRenderWithID.c
@@ -21,7 +21,6 @@ int main(int argc, char **argv){
     int seed = time(0) % 999999;    // to keep it re-typeable
     if(argc > 1) seed = atoi(argv[1]);
     fprintf(stderr, "\e[1mSeed: %d\e[0m\n", seed);
-
 
 
     // 1) Sample grid signature
@@ -81,47 +80,5 @@ int main(int argc, char **argv){
     printAscoTileMap(map);
     //cairoRenderMap(map);
     freeAscoTileMap(map);
-
-
-    /*
-    struct ascoTileMap *map = newAscoTileMap(10, 10);
-    for(int y = 0; y < 10; y++){
-        for(int x = 0; x < 10; x++){
-            map->cells[(y * map->width) + x].tile = TILE_UNKNOWN;
-        }
-    }
-
-    // Make a mapwide parent for jerry
-    struct gridTransform parent = newGridTransform();
-    parent.width = 10;
-    parent.height = 10;
-
-    // Make jerry
-    struct parcel jerry;
-    jerry.shape = I_SHAPE;
-
-    selectAndApplyParcelGenerator(&jerry);
-
-
-
-    // Set transform of jerry
-    jerry.transform = newGridTransform();
-    jerry.transform.width = 7;
-    jerry.transform.height = 8;
-    jerry.transform.x = 1;
-    jerry.transform.y = 1;
-
-    // Jerry inherits from parent
-    gTInherit(&parent, &(jerry.transform));
-
-    // Realize jerry
-    jerry.realizer(map, &jerry);
-
-    // Handle jerry's residuals
-    // Inherit from jerry
-    gTInherit(&(jerry.transform), &(jerry.walkway));
-    gTInherit(&(jerry.transform), &(jerry.shield));
-    realizeWalkwayAndShield(map, &(jerry.walkway), &(jerry.shield), &(jerry.walkway), &(jerry.walkway));
-    */
 
 }

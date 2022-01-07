@@ -562,6 +562,8 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
     Ah well. Don't let that stop you.   
  
     GO BACK TO v2; REWORK THE LOGIC FOR LEFTSIDE ZERO; REINTRODUCE DEGREE-FOUR GATES(?)
+
+    Did so. Gates now fully functional (fingers crossed)
     
                     
 ===============================================================================

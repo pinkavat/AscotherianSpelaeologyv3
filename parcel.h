@@ -2,6 +2,7 @@
 #define PARCEL
 
 #include "gridTransform.h"
+#include "rectGate.h"
 #include "parcelGenParameters.h"
 
 /* parcel.h
@@ -23,9 +24,7 @@
 *       NOTE: Z was snuck into the gridTransform struct. It's not strictly part of gridTransform, but putting it there simplifies some helper ops immensely.
 *
 *   The parcel also has space for storing "residual" data. These data are not set until realization, but need to be known by an invoking context.
-*   These data include gates:
-*       Gates are grid transforms guaranteed to a) be only one unit thick and b) lie just inside (on) their corresponding edge of the parcel.
-*   The data also include the sizes of the entry walkway and the optional blockage shield:
+*   These data include gates (see rectGate.h) and the sizes of the entry walkway and the optional blockage shield:
 *       Due to the need for the generator to set tile-level permissions to enable smart postprocessing, the parcel cannot generate its own
 *       walkway and shield; it needs to know where the adjacent parcel's exit gate connects to its entry to draw the path.
 *       Hence, the parcel realizes its own content, then merely describes the area occupied by the walkway and shield as a residual, to be realized
@@ -125,7 +124,7 @@ struct parcel {
 
     // These fields are "residue"; populated by the realizer function and used by the invoker's realizer
 
-    struct gridTransform gates[3];      // Up to three (number given by shape) gates, in parcel-local space, from left counterclockwise. 
+    gateSet gates;                      // The gates of this parcel (see above) 
 
     int walkwayWidth;                   // The width of this parcel's walkway
     int shieldHeight;                   // The height of this parcel's shield

@@ -70,6 +70,7 @@ void testLakeRealizer(void *context, struct parcel *parcel){
     }
 
     // Set gates (TODO bad gates here)
+    /*
     parcel->gates[0] = newGridTransform();
     parcel->gates[0].x = parcel->walkwayWidth;
     parcel->gates[0].y = parcel->shieldHeight;
@@ -77,4 +78,5 @@ void testLakeRealizer(void *context, struct parcel *parcel){
     parcel->gates[0].height = parcel->minHeight;
     parcel->gates[1] = parcel->gates[0];
     parcel->gates[2] = parcel->gates[0];
+    */
 }
