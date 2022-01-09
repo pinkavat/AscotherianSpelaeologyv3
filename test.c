@@ -55,8 +55,8 @@ int main(int argc, char **argv){
 
 
     // 3) Set target dimensions
-    jimmy.transform.width = 30;
-    jimmy.transform.height = 20;
+    jimmy.transform.width = jimmy.minWidth * 2;
+    jimmy.transform.height = jimmy.minHeight * 2;
 
     // 4) Prep a blank map
     struct ascoTileMap *map = newAscoTileMap(gTAbsWidth(&(jimmy.transform)), gTAbsHeight(&(jimmy.transform)));

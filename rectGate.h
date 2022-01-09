@@ -8,6 +8,9 @@
 *   Functionality for manipulating four "gates", one on each edge of a transformed rectangular grid (see "gridTransform.h")
 *
 *   The gates are laid out thus in a "gate array", for an unrotated, unflipped grid.
+*   Counterclockwise from left is not similar to the rotation data used in the grid transform (clockwise from top). This is 
+*   a conceptual muddle that persists because I'm too dense to reason about gates in any orientation but this one (it seems, by experiment)
+*   and I'll be damned if I have to rebuild the grid transform logic (can't even remember how it works)
 *
 *           |--3--|
 *        ---#######v###---

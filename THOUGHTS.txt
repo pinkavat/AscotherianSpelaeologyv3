@@ -16,6 +16,21 @@
         2) Is recomputing the min dim data for the grid recursor actually cheaper than storing it?
 
 
+    THOUGHTS ABOUT THE POSTPROCESSOR:
+        1) See v1 and v2.
+        2) Develop replacement automaton (a la KMP)
+        3) Jan 8 idea: Just as UNRESOLVEDS can be filled with blockage as long as they don't obstruct, so too can BLOCKAGES be filled with blank floors as long as
+            they still obstruct. The same logic can be used for BOTH CIRCUMSTANCES. Chew on that later.
+        4) Jan 8 scrapped the edgetracer in favor of a void-appender device.
+            NOTE: the global params should include whether this is permitted -- after all, the algorithm could be invoked to generate a small part of a larger cave
+                    Think on't.
+            An edgetracer of sorts may still be necessary for the doorways to work...?
+
+    ASSUMPTIONS TO ADD TO THE DOCS:
+        1) Parcels always possess a tile on either side of their gate that doesn't contain the gate, to avoid the corner-clash sheath problem.
+
+
+
 
     ASCOSPEL GENERATOR VERSION THREE
     This time for sure! ...*sigh*
@@ -562,8 +577,97 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
     Ah well. Don't let that stop you.   
  
     GO BACK TO v2; REWORK THE LOGIC FOR LEFTSIDE ZERO; REINTRODUCE DEGREE-FOUR GATES(?)
-
     Did so. Gates now fully functional (fingers crossed)
+
+    ONE LAST THOUGHT: Don't forget to correct for the gazumpee's flips during gate-gazumption (may need to invert the gate received from the gazumper)
     
                     
+===============================================================================
+    Jan 8: Gazumption & co; REMOVING THE EDGETRACER ALGORITHM
+
+    Foresaw a problem which we may have overlooked:
+    The reason sheathes were their own parcels was that we could allow CORRECTION OF THE CHILD'S GATES BASED ON THE SHEATH'S CULLED EDGES.
+    THIS IS IMPORTANT: THE CHILD RETURNS GATES AS IF IT IS UNSHEATHED, but the sheath CHANGES THE SIZE, and, if we allow SHEATH PRUNING, not by constant proportion.
+    I believe (though I haven't verified formally) that under v2's assumptions about the nature of sheathing, even if we allow pruning all the members of a grid
+    are guaranteed to fit exactly in their rows and columns. Let's assume that part of the sheath data handled by the grid is a "core offset" (that's either 0 or 1
+    in each dimension). This doesn't really help us vis-a-vis rotated/mirrored child gates on the underside, however.
+    So instead of a core offset, we look at the sheath-data's culling decisions themselves.
+    NOTE THAT SUCH A CORRECTION WILL TAKE PLACE MULTIPLE TIMES PER GATE:
+        1) Gazumption
+        2) Sheath realization
+        3) Parent gatesetting
+    There are two transforms at play: transforming the gazumper's gate into grid-cell-space, based on the gazumper's sheath, and transforming that back into gazumpee's
+    space, based on the gazumpee's sheath.
+
+    HOLD THE PHONE: If we observe, as above, that the sheath culling between adjacent cells is the same, that must mean that their gate cores align, always. If it were
+    otherwise, we'd have an abruptly terminated sheath.
+    HOLD THAT HOLD: We're no longer certain of that assertion.
+
+    It's time to simplify our assumptions, to make the algorithm comprehensible and not induce preoptimization paralysis. If nothing else comes of this work,
+    we learn that lesson.
+    THERE ARE ONLY TWO CIRCUMSTANCES in v2's sheathing in which a sheath's edge is made of blank floor.
+        1) The rects are topologically adjacent and height adjacent
+        2) The rects are height adjacent and not topologically adjacent, but the neighbor is footing the blockage burden.
+    In the former case, the floor can be costlessly blank (and the gate realizer can draw critical-path floor instead of stairs)
+    In the latter case, a two-wide blockage is no worse than a one-wide blockage.
+    WE DEVELOPED THE SHEATH CULLER TO MITIGATE SPACE LOSS. The flex algorithm, however, gives us more space sense than ever before. We can splurge on sheathes.
+    Here's the snag: the sheathing model is built on the assumption of world-border culling; indeed, world-border is the only remaining case in which a cull
+    *must* occur for the whole thing to work. If there were no void incursions, then it's not a problem: the alignment is guaranteed.
+    Since there are void-incursions, however, we must think a little harder about our assumptions before beginning the sheathing/gazumption process.
+    It *would* be nice to obviate the need for sheathing data completely, though; if we recalc it at realization time (knowing the dimensions ahead of time because
+    they're constant). Hm.
+    WE HAVEN'T ACTUALLY THOUGHT ABOUT WHETHER THE EDGETRACER DOES ANYTHING AT ALL. Somewhere, buried under a mountain of paper, I thought I had such a proof.
+    Turns out no -- it's a badly formulated hunch. ABANDON THE EDGETRACER. THINK INSTEAD ABOUT VOID-INCURSION; the theory is this: the incursions will be (in the
+    absence of a tracer) locked off behind walls, which will have to be punched through by a system. That's easy enough to do in post -- just look for unconnected
+    voids, get their dimensions (they're guaranteed to be rects, and we could even abuse the variant system to make it easy on the post-processor)
+    Then: scan out from their edges. If all you encounter is wall, and the walls tot up to less than the dimension of the incursion, we can intrude.
+    How do we handle nested incursions??
+    THUS: Void is at height zero. Thus, if the two times the void-parcel's height is greater than its least dimension, the parcel cannot possibly connect to the
+          outside-the-map-void AND FILLS ITSELF WITH INACCESSIBLE FLOOR TILES AT REALIZATION TIME.
+        Otherwise it remains void, and is handled by the post-processor accordingly, because the processor knows that at least one of its edge tiles (or just none, if
+        even) will touch the void-edge of the map.
+    
+    All right. We've convinced ourselves. The edgetracer goes, in favor of void-regions marking themselves and taking care of themselves.
+    Implications:
+        1) All sheathes are now guaranteed to add the same amount of space; therefore sheath-data storage in the recursor's data struct goes.
+        2) As a direct result, all child cores are guaranteed to align gatewise; thus, no gate transforms are needed.
+        3) World-border adjacency now NO LONGER NEEDS TO EXIST OR BE TRANSMITTED. Thus we remove it from parameters. 
+            Height-adjacency is the only thing to consider, and this is drawn from the grid unit at realization-time.
+
+    Here's the gazumption algorithm again:
+    For every grid child parcel:
+        1) The gazumpee's gate in question is gate zero; if the parcel is V_SHAPE or faces an edge, handle in some other way*
+        2) If the gazumpee faces up, gazumper's target gate is 1, etc. (gazumperGate = 3 - (gazumpeeGate + 2)%4)
+        3) If the gazumpee is flipped (H if 1 or 3, V if 0 or 2), then the gazumper's gate inverts.
+        4) Take the two resulting gates and feed them to the gazumpee's walkway realizer.
+        5) Clobber the gazumpee's gate zero with the gazumper's gate. Now ready for sheathing pass (which could, in theory, be lumped here also)
+
+    * Unsolved problem in grid-gate-gazumption and walkway-realization for the entry-facing gates
+        Also concerns forks, where many children adjoin one master entryway...?
+
+    DARNBLAST IT ALL
+    Even a simple test of fixed-size sheathes is sufficient to show that such wastes FAR TOO MUCH SPACE. We'd overlooked a single case:
+    When a child abuts the edge of its parent, and is of the same height, then topo-adj is handled by the parent's parent.
+    Thus we have a blank void of nothingess that can only translate into blockage.
+    It's time to rebuild the sheathing logic, with pruning completely realized in it; and it's also time to build the transform system.
+    We can still scrap the worldborder stuff though. That's not nothing!
+    Topoadj is back (but it's still inferred)
+    
+    Detected a minor problem in the variable-sheath assumptions, and, therefore, a new assumption is created (see #1 at top)
+
+    So: we're back to needing
+        a) a way to describe the parcel core's position within its sheath
+        b) which is needed by a gate-corrector that brings gates out of/into grid-space.
+    The sheath data computation results in Edge and Corner types in v2. Can we improve on this in any easy way?
+
+    Sheathes can be their own parcels, handling walkways and blockages themselves, if we refactor in the following functionality:
+    THAT THE PARCEL REALIZATION STEP IS TWOFOLD: FIRST, THE PARCEL REPORTS ITS DIMENSIONS; THEN, IT IS REALIZED.
+    This breaks the pure recursive structure and the overall flex assumptions.
+    NO. COMMIT TO THE EXISTING FORM.
+
+    Sheath skeleton online.
+    Base case now has legitimate-looking gates.
+
+    Next up: the transformer from in-sheath gate coords to out-of-sheath gate coords and back again
+
 ===============================================================================

@@ -14,8 +14,8 @@ void testLakeIdeator(struct parcel *parcel){
     parcel->flexX = 1.0;    // Test lake absolutely wants to resize as much as possible
     parcel->flexY = 1.0;
 
-    parcel->minWidth = 3;   // Initial dimensions are minimal (width is walkway-inclusive)
-    parcel->minHeight = 2;  // Height is NOT shield-inclusive, shields are optional
+    parcel->minWidth = 5;   // Initial dimensions are minimal (width is walkway-inclusive) TODO assumptionbased
+    parcel->minHeight = 4;  // Height is NOT shield-inclusive, shields are optional
 
     parcel->children = NULL;
     parcel->childCount = 0;

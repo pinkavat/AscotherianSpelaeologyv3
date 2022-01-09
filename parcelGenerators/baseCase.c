@@ -3,8 +3,8 @@
 // baseCase.c
 // See header for details
 
-#define CORE_WIDTH 1
-#define CORE_HEIGHT 1
+#define CORE_WIDTH 3    // TODO gate-size-relative, assumption for correct function
+#define CORE_HEIGHT 4
 
 
 void baseCaseIdeator(struct parcel *parcel){
@@ -69,14 +69,14 @@ void baseCaseRealizer(void *context, struct parcel *parcel){
         break;
     }
 
-    // Set gates (TODO!!)
-    /*
-    parcel->gates[0] = newGridTransform();
-    parcel->gates[0].x = parcel->walkwayWidth;
-    parcel->gates[0].y = parcel->shieldHeight;
-    parcel->gates[0].width = parcel->minWidth;
-    parcel->gates[0].height = parcel->minHeight;
-    parcel->gates[1] = parcel->gates[0];
-    parcel->gates[2] = parcel->gates[0];
-    */
+    // Set gates (TODO global gate size...)
+    parcel->gates[0].position = parcel->transform.height - 3;
+    parcel->gates[0].size = 2;
+    parcel->gates[1].position = parcel->transform.width - 3;
+    parcel->gates[1].size = 2;
+    parcel->gates[2].position = parcel->transform.height - 3;
+    parcel->gates[2].size = 2;
+    parcel->gates[3].position = parcel->transform.width - 3;
+    parcel->gates[3].size = 2;
+
 }

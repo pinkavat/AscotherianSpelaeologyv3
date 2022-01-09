@@ -11,6 +11,7 @@
 *
 *   TODO: mapfile IO
 *   TODO: find some way of excising the debug data from a deployment header?
+*   TODO: add a "debug flag" to the tiles, such that they are highlighted in debug print???
 *   TODO: map validation?: some tiles declare membership in a tiling type but don't have meaningful tiles for certain variants (e.g. no convex stairs (yet))
 *
 * written December 2021 as part of AscoSpel v3
@@ -138,7 +139,7 @@ static void freeAscoTileMap(struct ascoTileMap *map){
 
 // TODO VERY IMPORTANT: Anchored supertiles "clobber" other parts of the map upon rotation.
 // THAT'S A BAD DEPENDENCY, WE NEED TO THINK ABOUT THIS FROM A DIFFERENT ANGLE.
-// We can't easily abandon multicell tiles in the overworld (think buildings...!)
+// We can't easily abandon multicell tiles in the overworld (trees everywhere..!)
 
 
 // Helper macro for rotateCell (lifted from v2)

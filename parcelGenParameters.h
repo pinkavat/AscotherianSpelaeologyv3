@@ -18,7 +18,6 @@ struct parcelGenParameters {
     unsigned int recursionDepth;    // The number of recursive steps taken to arrive at this point
 
  
-    // TODO world-border adjacency here?
     // TODO something better than "challenge rating" ("type theory"?)
     // TODO reward notation
     // TODO lock bitsets

@@ -4,8 +4,7 @@
 // See header for details
 
 
-// Helper for the below functions; computes the new index and whether the coordinate has to be inverted
-// TODO this is lifted wholesale from v2; there must be a better way.
+// Helper for the below
 static int getGateIndex(struct gridTransform *t, int index, int *invertPtr){
     // 1) Rotate
     int newGateIndex = (index + (t->rotation)) % 4;
@@ -26,9 +25,10 @@ static int getGateIndex(struct gridTransform *t, int index, int *invertPtr){
         // Flip if the upper bit doesn't match
         *invertPtr = (index & 2) != (newGateIndex & 2);
     }
-
     return newGateIndex;
 }
+
+
 
 
 struct gate getGate(gateSet set, struct gridTransform *t, int index){
@@ -43,6 +43,8 @@ struct gate getGate(gateSet set, struct gridTransform *t, int index){
     out.size = set[newIndex].size;
     return out;
 }
+
+
 
 
 void setGate(gateSet set, struct gridTransform *t, int index, struct gate *newGate){

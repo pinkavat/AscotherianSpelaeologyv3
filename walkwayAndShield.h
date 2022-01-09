@@ -13,6 +13,7 @@
 * written January 2022
 */
 
-void realizeWalkwayAndShield(struct ascoTileMap *map, struct parcel *parcel /*TODO gates*/);
+// Takes the context map, the parcel whose walkway and shield this is, and the gate of said parcel (inner gate) plus the gate imposed by its neighbor (outer gate)
+void realizeWalkwayAndShield(struct ascoTileMap *map, struct parcel *parcel, struct gate *innerGate, struct gate *outerGate);
 
 #endif

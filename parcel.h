@@ -86,6 +86,7 @@
 *       There were two more, but they were removed due to conceptual complications with the blockage shield:
 *       XL enters through gate 0 and leaves through gate 1, with gates 2 and 3 being flanges
 *       XI enters through gate 0 and leaves through gate 2, with gates 1 and 3 being flanges
+*       TODO put these back in?
 *
 */
 enum parcelShapes {V_SHAPE, E_SHAPE, L_SHAPE, I_SHAPE, TL_SHAPE, TI_SHAPE /*, XL_SHAPE, XI_SHAPE*/};
@@ -124,7 +125,9 @@ struct parcel {
 
     // These fields are "residue"; populated by the realizer function and used by the invoker's realizer
 
-    gateSet gates;                      // The gates of this parcel (see above) 
+    gateSet gates;                      // The gates of this parcel (see above)
+                                        // TODO note: there are four gates, but only three are used normally (until we reintroduce X-shapes; this
+                                        // is to allow the gate-transform code to have simple structure)
 
     int walkwayWidth;                   // The width of this parcel's walkway
     int shieldHeight;                   // The height of this parcel's shield

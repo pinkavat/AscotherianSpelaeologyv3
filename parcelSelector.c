@@ -7,9 +7,10 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
 
     // TODO demo testing code
 
-    if(parcel->parameters.recursionDepth >= 2){
+    if(parcel->parameters.recursionDepth >= 1){
         // Base out
-        testLakeIdeator(parcel);
+        //testLakeIdeator(parcel);
+        baseCaseIdeator(parcel);
     } else {
         // Recurse with grid
         // Sample grid signature from above

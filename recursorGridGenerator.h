@@ -2,6 +2,7 @@
 #define RECURSOR_GRID_GENERATOR
 
 #include "parcel.h"
+#include "sheath.h"
 #include "walkwayAndShield.h"
 #include "mapHelpers.h"
 #include "recursorGridSignature.h"
@@ -32,10 +33,8 @@ struct recursorGridDataStruct {
     
     // On further reflection, it's probably better to recompute flex scores / minimum dimensions.
     // I anticipate that the grids will be mostly small, so it's unwise to burden malloc.
-    // Also, in a mad future universe where the data-struct is a union rather than heap-resident, we'd want to eliminate this sort of thing anyway.
 
-    // TODO sheath data
-    
+    struct sheathData *sheathes;                // 2D array of sheath data for each child parcel (the sheathing step is juuuust complex enough to store, for now)
 };
 
 // ==========   IDEATOR   ==========
