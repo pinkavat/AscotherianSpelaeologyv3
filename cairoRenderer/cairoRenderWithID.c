@@ -329,33 +329,19 @@ void cairoRenderMap(struct ascoTileMap *map){
                     tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x] + tileSetData[tile][5], tile);
                 */
                 drawTile(scr, tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x] + tileSetData[tile][5], tile);
-                // TODO temporary stair-widening process (since stair termination not yet handled by tileSET
 
+                
+                // TODO temporary stair-widening process (since stair termination not yet handled by tileSET
                 if(mapCell(map, x, y).tile == TILE_STAIR && (
-                    (mapCell(map, x+1, y).tile == TILE_STAIR && mapCell(map, x, y).rotation == mapCell(map, x+1, y).rotation) || 
-                    (mapCell(map, x, y+1).tile == TILE_STAIR && mapCell(map, x, y).rotation == mapCell(map, x, y+1).rotation)
+                    (mapCell(map, x+1, y).tile == TILE_STAIR && 
+                        mapCell(map, x, y).rotation == mapCell(map, x+1, y).rotation && mapCell(map, x, y).z == mapCell(map, x+1, y).z)|| 
+                    (mapCell(map, x, y+1).tile == TILE_STAIR && 
+                        mapCell(map, x, y).rotation == mapCell(map, x, y+1).rotation && mapCell(map, x, y).z == mapCell(map, x, y+1).z)
                 )){
                     // No bounds check, because stairs will never appear on the map boundary (if they do, I'll eat the segfault as this isn't production-destined code)
                     int widenerTile = 40 + mapCell(map, x, y).rotation;
                     drawTile(tcr, tileSet, x * 16 + BUFFER_X + tileSetData[widenerTile][4], yOffset[x] + tileSetData[widenerTile][5], widenerTile);
                 }
-
-                /* TODO widened stair check needs conversion (removal; stairs are now terminated in-map)
-                // Check for widened stairs for special stair graphics
-                if(map->cells[y*map->width+x].tile == TILE_STAIR_TOP && map->cells[y*map->width+x+1].tile == TILE_STAIR_TOP){
-                    // Draw widened top stair
-                    drawTile(tcr, tileSet, x*16 + BUFFER_X + tileSetData[40][4], yOffset[x]+ tileSetData[40][5], 40);
-                } else if(map->cells[y*map->width+x].tile == TILE_STAIR_BOTTOM && map->cells[y*map->width+x+1].tile == TILE_STAIR_BOTTOM){
-                    // Draw widened bottom stair
-                    drawTile(tcr, tileSet, x*16 + BUFFER_X + tileSetData[42][4], yOffset[x]+ tileSetData[42][5], 42);
-                } else if(map->cells[y*map->width+x].tile == TILE_STAIR_RIGHT && map->cells[(y+1)*map->width+x].tile == TILE_STAIR_RIGHT){
-                    // Draw widened right stair
-                    drawTile(tcr, tileSet, x*16 + BUFFER_X + tileSetData[41][4], yOffset[x]+ tileSetData[41][5], 41);
-                } else if(map->cells[y*map->width+x].tile == TILE_STAIR_LEFT && map->cells[(y+1)*map->width+x].tile == TILE_STAIR_LEFT){
-                    // Draw widened right stair
-                    drawTile(tcr, tileSet, x*16 + BUFFER_X + tileSetData[43][4], yOffset[x]+ tileSetData[43][5], 43);
-                }
-                */
 
                 // Then move on
                 yOffset[x] += tileSetData[subTile][3];

@@ -37,6 +37,11 @@ struct gate {
 typedef struct gate gateSet[4];     // Counterclockwise from left, as above
 
 
+// Transforms a gate index; returns the ACTUAL gate (from the transform's POV) that appears to be the CANONICAL gate (from the outside world's POV)
+// along with whether said gate is flipped from what we expect.
+// Written as a helper for getGate and setGate; only exposed because we can kitbash this transform logic to help the topo-adj computer in recursor grid.
+int getGateIndex(struct gridTransform *t, int index, int *invertPtr);
+
 // Return the gate of the index specified (as seen from without), selecting the actual gate (as seen from within) to return based on the transform
 struct gate getGate(gateSet set, struct gridTransform *t, int index);
 

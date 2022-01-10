@@ -138,6 +138,7 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
 
         // Set child height
         parcel->children[i].transform.z = (i % 3) - 1;   // TODO HEIGHT SELECTOR
+        //parcel->children[i].transform.z = 0;   // TODO HEIGHT SELECTOR
     }
 
 
@@ -150,9 +151,17 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
             int curIndex = (y * signature->width) + x;
             struct parcel *child = &(parcel->children[curIndex]);
 
+            // TODO add L-case corrector!
             int topoAdj[4] = {1, 1, 1, 1};
-            // Infer topo-adj from shape and orientation
-            // TODO ACCOUNT FOR FLIPS; IMPORTANT. can we kitbash some other code?
+            if(x > 0 && y > 0){ // Only check topo-adj for top and left of inner rects
+                // Infer topo-adj from shape; compensate for flips and orientation by KITBASHING THE GATE INDEXER :)
+                int throwaway;  // To make getGateIndex happy
+                int expectedGateCount = (child->shape / 2) + 1;
+                if(getGateIndex(&(child->transform), 3, &throwaway) >= expectedGateCount) topoAdj[0] = 0; // Top gate
+                if(getGateIndex(&(child->transform), 0, &throwaway) >= expectedGateCount) topoAdj[3] = 0; // Left gate
+            }
+            
+            
 
             // Compute height-adj with a helper
             int heightAdj[9];
@@ -482,7 +491,10 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     // 6) The Gate-gazumption (and walkway realization) process
     for(int i = 0; i < signature->width * signature->height; i++){
         if(gazumperIndices[i] == -1){
-            // Borders edge (or malformed) TODO
+
+            // Borders edge (or malformed)
+            realizeWalkwayAndShield(map, &(parcel->children[i]), &(parcel->children[i].gates[0]), &(parcel->children[i].gates[0]));
+
         } else {
             struct gate gazumpGate = getGate(parcel->children[gazumperIndices[i]].gates, &(oldTransforms[gazumperIndices[i]]), gazumptionGateIndices[i]);
 

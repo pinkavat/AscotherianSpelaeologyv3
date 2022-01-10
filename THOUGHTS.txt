@@ -12,6 +12,7 @@
         2) "waterworld" grid recursor kitbash
         3) Some sort of error handler (mostly to deal with malformed signatures (or we could sidestep them with a later "signature validity checker"))
         4) Same-same corner culling for sheathes
+        5) Add "expansion direction" back in, for picking where to add lengthening parcels?
 
     WILD FUTURE OPTIMIZATION LIST
         1) Replace heap-resident parcel data struct pointer with data struct union (of all possible data structs, they're small)?
@@ -695,8 +696,96 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
 ===============================================================================
     Jan 10: Sheath computation
 
-    Successfully lifted v2's sheathing logic (minus the same-same corner culling, which is a future optimization) 
+    Successfully lifted v2's sheathing logic (minus the same-same corner culling, which is a future optimization).
+    Hooked it up to topo-adj (through a neat kitbash of the gate-transform logic) and height-adj successfully.
 
+    Next up: Recursor gates and landing strips. This requires a little conceptual thought.
+        Problem 1: Which recursor(s) are the exit(s) of a rect? Is this signature data or computed?
+        Problem 2: Forks need a little extra logic, because they possess 
+            a) A nonstandard walkway
+            b) An EXIT STRIP, which can be in one of two places
+    Right now, rects abutting the edge don't get gazumped -- their walkways reflect their own gate-zero. 
+    This is fine.
+    
+    BEFORE WE CAN REASON ABOUT WALKWAYS, we need to know some global parameters, like PATH WIDTH and GATE WIDTH.
+    Are these parameters truly global? NO; they just have to be consistent.
+    (we'd want the main path to be 2x wide, while the flanges need only be 1x wide)
+    We can hammer these into the struct temporarily BUT
+    It's time we got the parameter divisor online -- we have it mostly worked out conceptually.
+    So: it's time to flesh out the parameter theory, as it relates to division.
+    In v2, we had two variants: CRITICAL and SHORTCUT paths, and three sets of locks.
+    Critical paths enforced the mandatory locks, and could enforce the optional locks.
+    Shortcuts enforced the backtracking locks, but it's not clear whether they also have to enforce mandatory locks, which was an unseen flaw.
+
+    In our new case, "paths" can be grouped into the following kinds:
+        1) CRITICAL:    The mandatory path walked to traverse the cave from entrance to exit.
+                            Any rewards on the critical path are incidental goof.
+        2) SHORTCUT:    A path that connects the critical path to itself, but using lock privileges not present on the critical path.
+                            Rewards may become present as shortcuts appear; this is reward-adding.
+        3) FLANGE:      A path not on the critical one. Responsibilities here are not clear; if there's a branch in the level topology
+                            (say, a secondary exit to the cave) then the path leading thither is also critical.
+                            Flanges could also arise naturally, as part of recursion on I- or L- parcels; this would result in E-parcels
+                            appearing bearing goof (reward-adding again).
+                            So what locks a flange?
+                    --> Actual parcels are divided therefore into Obligate flanges (which are the T- or X- parcels leading to another critpath) and 
+                        Incidental flanges (generated out of nothing).
+        4) LOOPBACK:    Ledges connecting paths back to themselves need better typing than before; such ledges could be goof-draws (reward adding again!)
+
+    By the by, where would we stick "waterworld" in this? "waterworld" needs to talk to the height-adajcency system, zeroing it out.
+    Here's a thought: If the initial condition to the generator is JUST A GRID SIGNATURE, then INTERNAL grid signatures match the initial condition, and this
+        affects how we consider metrics.
+    Is this the case?
+    Time for research. In our observation of source material, we see that a parcel can be told to contain (apart from "make it up yourself"):
+        1) Ladders/Holes/Exits (plausibly individually-functioned)
+        2) NPC encounter prefabs (either en passant or terminal)
+        3) Good quality Goof (usually terminal, though some is en passant -- needs good signifiers though)
+        4) Signature feature (think Rock Tunnel's RS-ladder thing or Iron Island's elevators)
+    #2 and #3 contain references to data beyond the scope of the generation process. If the generator is to handle these as part of its grid signature, it needs
+    to be able to tell the invoking context, at the end, just what it has created and where, to allow links to the entity/goof table.
+    Note: #4 is not mentioned, because #4 would be written with parcel logic, only merely not selected.
+    Some more complex NPC encounters would also be written with parcel logic, to allow for interesting geometry.
+    Here's the thing... even AUTOGENOUS NPC encounters need reference to the NPC population system, and we'd be foolish not to do the same with goof.
+    Say, for the sake of argument, that a cave pregenerates its NPC encounters in a table, and its goof likewise.
+    The upshot of that is this: The parcel solver is now having to distribute a table of things, which is essentially a more general case of locks,
+    AND SHOULD REPLACE THEM COMPLETELY (...?)
+
+    So: we have a new conceptual data type, the "Thing which appears in the caves"
+        This type includes NPC encounters, locks, and goof.
+        The selector checks these, and activates associated parcel generators, passing extra data from these items into the extra param fields of said generators.
+        Serious NPC/goof prefabs can be implemented by deploying a parcel to whose metrics these data have been added alone.
+        WHICH RAISES A POINT ABOUT METRIC DIVISION: We don't start with a metric and a pattern, we start with a metric and a pattern for whom metrics may already
+        have been set.
+        So how to we get this data into the system in the first place? It'll have to be by adding data to the signature (which is a waste, no?) UNLESS
+        this is how we get goof to arise automatically: by adding it to the list handed down to the next recursor. Think on't.
+        Or, perhaps, we add a param to the recursor, a param left null by most invocations. If non-null, it points to WAIT THAT's just the signature idea again.
+        So: the signature now includes an optional array of lists, where each list is a set of things that is copied into the metrics given to the appropriate
+            recursive subparcel as part of parameter division. (Pointer to stack-resident arrays managed by invoker)
+        If we want locks, we add them to the desired parcel as listed items.
+        What if we want to merely *allow* locks to be used by the system...? I rather liked the elegance of the previous version -- it mixed permissions and
+        gameplay topology neatly.
+        OH: we're being daft. We have two lists; one is for "Must" and one is for "Can".
+                --> Divide into "Can-critical" and "Can-shortcut"?
+        How does this jive with flanges/shortcuts?
+    Hey Hey HEY! This idea helps with our "challenge / reward" problem! We can give the table elements challenge/reward ratings.
+
+    Hang on. Have we just worked out another level to the AscoSpel algorithm?
+    What if EVERYTHING in the cave were so described, with nothing left to chance?
+    E.g. we'd say "make this an I-shaped parcel containing a bike puzzle and two NPC encounters, with more bike puzzles if you wish" and the generator would just
+    go ham on the whole thing --> that is, it would use up its CHALLENGE RATING on the things we said we needed, and use up its REWARD RATING likewise, and then
+    SPEND THE REST on what we say it CAN have.
+    Maybe "can-haves" need better notation than list? (can't really see why on a modern machine)
+    REMEMBER! v1 was 3x as large as you are now, with fewer features!
+    HEY! THIS IDEA SOLVES THE PROBLEMS OF:
+        - Global allowances
+        - Cave biome themeing
+        - Signature mechanic system
+
+    NOTE: "spending" the challenge rating on things just in my own parcel means that the level metrics are parcel-specific in the initial condition.
+    So, for the first step, the recursor would start by copying stuff over..... Hm.
+    We can't ditch the first recursor pass, because it sets up the grid for us.
+
+    WE CAN PROTOTYPE THIS SYSTEM INDEPENDENTLY OF THE REST OF THE STRUCTURE: the coordination between item type and parcel generator is handled by the selector.
+    The question is: what does it mean to be a "shortcut"?
 
 
 ===============================================================================

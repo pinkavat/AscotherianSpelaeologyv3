@@ -5,7 +5,8 @@
 
 
 // Helper for the below
-static int getGateIndex(struct gridTransform *t, int index, int *invertPtr){
+// Public because topological adjacency determiner in the sheathing step has a good use for it as a kitbash
+int getGateIndex(struct gridTransform *t, int index, int *invertPtr){
     // 1) Rotate
     int newGateIndex = (index + (t->rotation)) % 4;
     

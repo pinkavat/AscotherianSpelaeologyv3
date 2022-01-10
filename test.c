@@ -23,9 +23,11 @@ int main(int argc, char **argv){
     fprintf(stderr, "\e[1mSeed: %d\e[0m\n", seed);
 
 
+    
     // 1) Sample grid signature
     enum parcelShapes shapes[4] = {L_SHAPE, L_SHAPE, L_SHAPE, L_SHAPE};
     unsigned int rotations[4] = {3, 0, 2, 1};
+    //unsigned int rotations[4] = {1, 2, 0, 3};
     unsigned int flipHs[4] = {0, 0, 0, 0};
     unsigned int flipVs[4] = {0, 0, 0, 0};
     
@@ -41,6 +43,7 @@ int main(int argc, char **argv){
         flipHs,
         flipVs
     };
+    
 
 
     // 2) Run grid ideator on new parcel
@@ -56,7 +59,7 @@ int main(int argc, char **argv){
 
     // 3) Set target dimensions
     jimmy.transform.width = jimmy.minWidth * 1;
-    jimmy.transform.height = jimmy.minHeight * 1;
+    jimmy.transform.height = jimmy.minHeight * 2;
 
     // 4) Prep a blank map
     struct ascoTileMap *map = newAscoTileMap(gTAbsWidth(&(jimmy.transform)), gTAbsHeight(&(jimmy.transform)));
