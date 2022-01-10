@@ -4,6 +4,26 @@
 // See header for details
 
 
+void placeCell(struct ascoTileMap *map, struct ascoCell *cell, struct gridTransform *t, int x, int y){
+    // 1) Copy input cell
+    struct ascoCell stampCell = *cell;
+
+    // 2) Transform input cell to match grid transform
+    rotateCell(&stampCell, t->rotation, t->flipH, t->flipV);
+    stampCell.z += t->z;
+    
+    // 3) Fetch target coordinate
+    int m, n;
+    gTCoordinate(t, x, y, &m, &n);
+
+    // 3) Stamp cell
+    mapCell(map, m, n) = stampCell;
+}
+
+
+
+
+
 // For fillRectCallback below
 struct fillRectCallbackContext {
     struct ascoTileMap *map;
@@ -28,7 +48,7 @@ void fillRect(struct ascoTileMap *map, struct ascoCell *cell, struct gridTransfo
     // 2) Transform input cell to match grid transform
     rotateCell(&stampCell, t->rotation, t->flipH, t->flipV);
     stampCell.z += t->z;
-    
+
     // 3) Prepare a context callback struct for gTRegionIterate
     struct fillRectCallbackContext context = {map, &stampCell};
 
@@ -79,7 +99,7 @@ void fillRectAuto(struct ascoTileMap *map, struct ascoCell *cell, struct gridTra
             // TODO
         break;
 
-        case ASCO_TILING_ANCHOR:
+        case ASCO_TILING_LARGE:
             // TODO
         break; 
     }

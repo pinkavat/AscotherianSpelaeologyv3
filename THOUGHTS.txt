@@ -5,11 +5,13 @@
     BUG LIST
         1) Grid Transform autoparent adjust thingy is buggy; transforming, interpreting, transforming, then interpreting again yields bad results.
             adjusting params of gT triggering a re-inherit MIGHT fix problem; or might exacerbate. Needs thinking. As stands, works, but fragile.
+        2) L-case still not handled
 
-    FEATURE LIST
+    FEATURE / IMPROVEMENT LIST
         1) Flip option for mapHelper autotile
         2) "waterworld" grid recursor kitbash
         3) Some sort of error handler (mostly to deal with malformed signatures (or we could sidestep them with a later "signature validity checker"))
+        4) Same-same corner culling for sheathes
 
     WILD FUTURE OPTIMIZATION LIST
         1) Replace heap-resident parcel data struct pointer with data struct union (of all possible data structs, they're small)?
@@ -25,9 +27,11 @@
             NOTE: the global params should include whether this is permitted -- after all, the algorithm could be invoked to generate a small part of a larger cave
                     Think on't.
             An edgetracer of sorts may still be necessary for the doorways to work...?
+            OR THE DOORS ARE PART OF THE ALGO, REALIZED AS E-PARCELS!!!
 
     ASSUMPTIONS TO ADD TO THE DOCS:
         1) Parcels always possess a tile on either side of their gate that doesn't contain the gate, to avoid the corner-clash sheath problem.
+        2) All gates are present in the parcel (assumption from sheather). If a parcel doesn't use a gate it sets its size to zero.
 
 
 
@@ -669,5 +673,30 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
     Base case now has legitimate-looking gates.
 
     Next up: the transformer from in-sheath gate coords to out-of-sheath gate coords and back again
+
+    Basic sheathless gate-gazumper now online. It's a nightmare incarnate, but it works (hopefully)
+    Just need to
+        a) Get it sheath-sensitive (COMPUTE SINGLE DIMENSIONAL OFFSET OF CORES, THEN JUST ADD SAID OFFSET TO THE GATE WHEN IT'S IN CELL-SPACE...? 
+        b) Add entry gates (....? Conceptual thoughts)
+
+    Finished off the evening by (re-)adding cliffs and water to the cairo renderer.
+    Discovered thereby a hilarious bug involving multiple copies of the tilemap; switched it to a non-header approach to solve.
+    Also left TILING LARGE In unsolved state. Sort out.
+
+===============================================================================
+    Jan 9: Sheath realization
+
+    Started off at 5PM by doing the gazumption sheath-compensator (simpler than I thought; hope it does in fact work..!)
+    Finished at 10PM by writing the sheath-realizer. Christ, what a job. Now that's a segment in need of serious optimization.
+    The frustrating thing is that you just know that an oldschool dev could get high on shrooms and code seven lines of magic-number-riddled
+    assembly to do what you just barely managed to do in 144 lines of C.
+
+
+===============================================================================
+    Jan 10: Sheath computation
+
+    Successfully lifted v2's sheathing logic (minus the same-same corner culling, which is a future optimization) 
+
+
 
 ===============================================================================

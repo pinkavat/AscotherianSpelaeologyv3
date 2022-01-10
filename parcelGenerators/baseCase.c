@@ -41,28 +41,12 @@ void baseCaseRealizer(void *context, struct parcel *parcel){
         break;
         case E_SHAPE: case L_SHAPE: case I_SHAPE:
         case TL_SHAPE: case TI_SHAPE:
-
-            /* TODO RELIC CODE REMOVE
-            // Set walkway
-            parcel->walkway = newGridTransform();
-            parcel->walkway.width = parcel->transform.width - CORE_WIDTH;
-            parcel->walkway.height = parcel->transform.height;
-    
-            // Set shield
-            parcel->shield = newGridTransform();
-            parcel->shield.x = parcel->walkway.width;
-            parcel->shield.width = CORE_WIDTH;
-            parcel->shield.height = parcel->transform.height - CORE_HEIGHT;
-            
-            // Draw blank floor core
-            struct ascoCell blankFloorCell = {TILE_UNKNOWN, 0, 0, 0};   // TODO changed to unknown for debug purposes
-            fillRect(map, &blankFloorCell, &(parcel->transform), parcel->walkway.width, parcel->shield.height, CORE_WIDTH, CORE_HEIGHT); 
-            */
+        case XL_SHAPE: case XI_SHAPE:
 
             parcel->walkwayWidth = parcel->transform.width - CORE_WIDTH;
             parcel->shieldHeight = parcel->transform.height - CORE_HEIGHT;
 
-            struct ascoCell blankFloorCell = {TILE_UNKNOWN, 0, 0, 0};   // TODO changed to unknown for debug visualizer purposes
+            struct ascoCell blankFloorCell = {TILE_UNKNOWN, 0, 0, 0}; // TODO UNKNOWN FOR DEBUG
             fillRect(map, &blankFloorCell, &(parcel->transform), parcel->walkwayWidth, parcel->shieldHeight, CORE_WIDTH, CORE_HEIGHT); 
 
 
@@ -71,12 +55,12 @@ void baseCaseRealizer(void *context, struct parcel *parcel){
 
     // Set gates (TODO global gate size...)
     parcel->gates[0].position = parcel->transform.height - 3;
-    parcel->gates[0].size = 2;
+    parcel->gates[0].size = parcel->shape > V_SHAPE ? 2 : 0;
     parcel->gates[1].position = parcel->transform.width - 3;
-    parcel->gates[1].size = 2;
+    parcel->gates[1].size = parcel->shape > E_SHAPE ? 2 : 0;
     parcel->gates[2].position = parcel->transform.height - 3;
-    parcel->gates[2].size = 2;
+    parcel->gates[2].size = parcel->shape > I_SHAPE ? 2 : 0;
     parcel->gates[3].position = parcel->transform.width - 3;
-    parcel->gates[3].size = 2;
+    parcel->gates[3].size = parcel->shape > TI_SHAPE ? 2 : 0;
 
 }

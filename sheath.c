@@ -3,49 +3,10 @@
 // sheath.c
 // See header for details
 
-/*
-enum sheathEdgeTypes {
-    SHEATH_EDGE_NONE,       // No edge this side at all
-    SHEATH_EDGE_FLAT,       // The edge this side is flat, unobstructed floor
-    SHEATH_EDGE_BLOCKAGE,   // The edge this side is flat, but not topologically connected, so it must be blocked.
-    SHEATH_EDGE_UP,         // The edge this side leads up to a higher adjacent area
-    SHEATH_EDGE_DOWN        // The edge this side leads down to a lower adjacent area
-};
 
-enum sheathCornerTypes{
-    SHEATH_CORNER_BLOCKAGE, // As above, but note that corners are either blocked or height-changing.
-    SHEATH_CORNER_UP,
-    SHEATH_CORNER_DOWN
-};
-
-
-struct sheathData {
-    enum sheathEdgeTypes edges[4];                // Clockwise from top
-    enum sheathCornerTypes corners[4];            // Clockwise from top-left
-};
-
-*/
-
-void computeSheathData(struct sheathData *sheath/*TODO params*/){
-    // TODO placeholder code
-  
-    /* 
-    sheath->edges[0] = SHEATH_EDGE_BLOCKAGE;
-    sheath->edges[1] = SHEATH_EDGE_BLOCKAGE;
-    sheath->edges[2] = SHEATH_EDGE_BLOCKAGE;
-    sheath->edges[3] = SHEATH_EDGE_BLOCKAGE;
-    sheath->corners[0] = SHEATH_CORNER_BLOCKAGE;
-    sheath->corners[1] = SHEATH_CORNER_BLOCKAGE;
-    sheath->corners[2] = SHEATH_CORNER_BLOCKAGE;
-    sheath->corners[3] = SHEATH_CORNER_BLOCKAGE;
-    */
-    sheath->edges[0] = SHEATH_EDGE_NONE;
-    sheath->edges[1] = SHEATH_EDGE_NONE;
-    sheath->edges[2] = SHEATH_EDGE_NONE;
-    sheath->edges[3] = SHEATH_EDGE_NONE;
-    
-    // TODO old v2 code for reference
-    /*
+void computeSheathData(struct sheathData *sheath, int topoAdj[4], int heightAdj[9]){
+    // Lifted wholesale from v2, pretty much. It works.  
+        
     unsigned char canCullEdge[4] = {1, 1, 1, 1};    // Initially, it's possible to cull all edges
     
     // Start all corners marked with blockage and all edges marked with flat
@@ -80,7 +41,7 @@ void computeSheathData(struct sheathData *sheath/*TODO params*/){
         // FUTURE OPTIMIZATION; for now, we can fail to cull these and waste a bit of space.
         for(int i = 0; i < 4; i++){
             if(heightAdj[2 * i] != heightAdj[8]){
-                sheath->corners[i] = (heightAdj[2 * i] > heightAdj[8]) ? SHEATH_CORNER_UP : SHEATH_CORNER_DOWN;
+                sheath->corners[i] = SHEATH_CORNER_CHANGE;
                 canCullEdge[i == 0 ? 3 : (i - 1)] = 0;
                 canCullEdge[i] = 0;
             }
@@ -91,8 +52,6 @@ void computeSheathData(struct sheathData *sheath/*TODO params*/){
     for(int i = 0; i < 4; i++){
         if(canCullEdge[i]) sheath->edges[i] = SHEATH_EDGE_NONE;
     }
-
-    */
 }
 
 

@@ -16,73 +16,71 @@
 #define OUTFILE "cave.png" // May make this a parameter eventually
 #define TILE_FILE "cairoRenderer/CairoGen4TileSet.png"    // NOTE: placed in subdir called cairoRenderer
 
-// Shorthand defines for indices in the below array
-#define TILE_FLOOR_ACCESSIBLE 13
-#define TILE_CLIFF_TOP 9
-#define TILE_CLIFF_RIGHT 10
-#define TILE_CLIFF_BOTTOM 11
-#define TILE_CLIFF_LEFT 12
 
 // X, Y, Width, Height, X offset, Y offset, and special layer data for each tile on the tilemap image
 static const int tileSetData[][7] = {
-    {16, 44, 16, 12,   0, 0, 0},     // Void
+    {16, 44, 16, 12,   0, 0, 0},     // 0: Void
 
-    {48,  0, 16, 12,   0, 0, 0},     // TL Convex
-    {48, 28, 16, 12,   0, 0, 0},     // TR Convex
-    {32, 34, 16, 22, 0, -10, 0},     // BL Convex
-    { 0, 34, 16, 22, 0, -10, 0},     // BR Convex
+    {16, 34, 16,  2,   0, 0, 0},     // 1: Top
+    { 0, 22, 16, 12,   0, 0, 0},     // 2: Right
+    {16,  0, 16, 22,   0, 0, 0},     // 3: Bottom
+    {32, 22, 16, 12,   0, 0, 0},     // 4: Left
 
-    { 0,  0, 16, 22,   0, 0, 0},     // BR Concave
-    {32,  0, 16, 22,   0, 0, 0},     // BL Concave
-    {48, 42, 16, 14, 0, -12, 0},     // TR Concave
-    {48, 14, 16, 14, 0, -12, 0},     // TL Concave
+    {48, 28, 16, 12,   0, 0, 0},     // 5: TR Convex
+    { 0, 34, 16, 22, 0, -10, 0},     // 6: BR Convex
+    {32, 34, 16, 22, 0, -10, 0},     // 7: BL Convex
+    {48,  0, 16, 12,   0, 0, 0},     // 8: TL Convex
 
-    {16, 34, 16,  2,   0, 0, 0},     // Top
-    { 0, 22, 16, 12,   0, 0, 0},     // Right
-    {16,  0, 16, 22,   0, 0, 0},     // Bottom
-    {32, 22, 16, 12,   0, 0, 0},     // Left
+    {48, 42, 16, 14, 0, -12, 0},     // 9: TR Concave
+    { 0,  0, 16, 22,   0, 0, 0},     // 10: BR Concave
+    {32,  0, 16, 22,   0, 0, 0},     // 11: BL Concave
+    {48, 14, 16, 14, 0, -12, 0},     // 12: TL Concave
 
-    {16, 22, 16, 12,   0, 0, 0},     // Accessible Floor
-    {64, 44, 16, 12,   0, 0, 0},     // Inaccessible Floor
 
-    {80,  4, 16, 15,  0, -3, TILE_FLOOR_ACCESSIBLE},     // Small Rock
-    {96,  4, 16, 24,  0, -12, TILE_FLOOR_ACCESSIBLE},    // Tall Rock
-    {112, 0, 32, 36,  0, -11, TILE_FLOOR_ACCESSIBLE},    // Large Rock TL corner (only this part needed for render)
+    {16, 22, 16, 12,   0, 0, 0},     // 13: Accessible Floor
+    {64, 44, 16, 12,   0, 0, 0},     // 14: Inaccessible Floor
 
-    {80, 19, 16,  3,   0, 0, TILE_CLIFF_TOP},     // Top Stairs
-    {80, 22, 16, 21,   0, -12, TILE_CLIFF_RIGHT},     // Right Stairs   // USED TO BE 9
-    {64, 0,  16, 22,   0, 0, TILE_CLIFF_BOTTOM},     // Bottom Stairs
-    {64, 22, 16, 21,   0, -12, TILE_CLIFF_LEFT},     // Left Stairs     // USED TO BE 9
+    {80,  4, 16, 15,  0, -3, 13},    // 15: Small Rock
+    {96,  4, 16, 24,  0, -12, 13},   // 16: Tall Rock
+    {112, 0, 32, 36,  0, -11, 13},   // 17: Large Rock TL corner (only this part needed for render)
 
-    {64, 98, 48, 7,   -16, -5, TILE_CLIFF_TOP},    // Interior Door Top
-    {64, 56, 38, 42,   -16, -18, TILE_CLIFF_RIGHT},    // Interior Door Right
-    {140, 56, 48, 48,   -16, -22, TILE_CLIFF_BOTTOM},    // Interior Door Bottom
-    {102, 56, 38, 42,   -6, -18, TILE_CLIFF_LEFT},    // Interior Door Left
+    {80, 19, 16,  3,   0, 0, 1},     // 18: Top Stairs
+    {80, 22, 16, 21,   0, -12, 2},   // 19: Right Stairs
+    {64, 0,  16, 22,   0, 0, 3},     // 20: Bottom Stairs
+    {64, 22, 16, 21,   0, -12, 4},   // 21: Left Stairs
 
-    {32,128, 16, 12,   0, 0, 0},     // TL Convex Water
-    {0, 128, 16, 12,   0, 0, 0},     // TR Convex Water
-    {32,116, 16, 12,   0, 0, 0},     // BL Convex Water
-    {0, 116, 16, 12,   0, 0, 0},     // BR Convex Water
-    {0,  92, 16, 12,   0, 0, 0},     // BR Concave Water
-    {32, 92, 16, 12,   0, 0, 0},     // BL Concave Water
-    {0, 140, 16, 12,   0, 0, 0},     // TR Concave Water
-    {32,140, 16, 12,   0, 0, 0},     // TL Concave Water
-    {16,140, 16, 12,   0, 0, 0},     // Top Water
-    {0, 104, 16, 12,   0, 0, 0},     // Right Water
-    {16, 92, 16, 12,   0, 0, 0},     // Bottom Water
-    {32,104, 16, 12,   0, 0, 0},     // Left Water
-    {16,104, 16, 12,   0, 0, 0},     // Center Water
+    {64, 98, 48, 7,   -16, -5, 1},   // 22: Interior Door Top
+    {64, 56, 38, 42,   -16, -18, 2}, // 23: Interior Door Right
+    {140, 56, 48, 48,   -16, -22, 3},// 24: Interior Door Bottom
+    {102, 56, 38, 42,   -6, -18, 4}, // 25: Interior Door Left
+
+    {16,104, 16, 12,   0, 0, 0},     // 26: Center Water
+
+    {16,140, 16, 12,   0, 0, 0},     // 27: Top Water
+    {0, 104, 16, 12,   0, 0, 0},     // 28: Right Water
+    {16, 92, 16, 12,   0, 0, 0},     // 29: Bottom Water
+    {32,104, 16, 12,   0, 0, 0},     // 30: Left Water
+
+    {0, 128, 16, 12,   0, 0, 0},     // 31: TR Convex Water
+    {0, 116, 16, 12,   0, 0, 0},     // 32: BR Convex Water
+    {32,116, 16, 12,   0, 0, 0},     // 33: BL Convex Water
+    {32,128, 16, 12,   0, 0, 0},     // 34: TL Convex Water
+
+    {0, 140, 16, 12,   0, 0, 0},     // 35: TR Concave Water
+    {0,  92, 16, 12,   0, 0, 0},     // 36: BR Concave Water
+    {32, 92, 16, 12,   0, 0, 0},     // 37: BL Concave Water
+    {32,140, 16, 12,   0, 0, 0},     // 38: TL Concave Water
     
-    {80, 44, 16, 12,   0, 0, 0},     // Placeholder tile
+    {80, 44, 16, 12,   0, 0, 0},     // 39: Placeholder tile
 
-    {96, 31,  8,  3,  11, 0, 0},     // Top Stair Widener
-    {119,36, 15, 20,   1,-3, 0},     // Right Stair Widener
-    {96, 34,  8, 22,  11, 0, 0},     // Bottom Stair Widener
-    {104,36, 15, 20,   0,-3, 0},     // Left Stair Widener
+    {96, 31,  8,  3,  11, 0, 0},     // 40: Top Stair Widener
+    {119,36, 15, 20,   1,-3, 0},     // 41: Right Stair Widener
+    {96, 34,  8, 22,  11, 0, 0},     // 42: Bottom Stair Widener
+    {104,36, 15, 20,   0,-3, 0},     // 43: Left Stair Widener
 
-    {144, 5, 24, 50,  -2,-36, TILE_FLOOR_ACCESSIBLE},   // Ladder Ascending
-    {168,24, 26, 23,  -5, -5, TILE_FLOOR_ACCESSIBLE},   // Ladder Descending
-    {168, 0, 26, 23,  -5, -5, TILE_FLOOR_ACCESSIBLE},   // Pit
+    {144, 5, 24, 50,  -2,-36, 13},   // Ladder Ascending
+    {168,24, 26, 23,  -5, -5, 13},   // Ladder Descending
+    {168, 0, 26, 23,  -5, -5, 13},   // Pit
     
     {48, 56, 16, 12,   0, 0, 0},     // Top Ledge (basic)
     {16, 68, 16, 12,   0, 0, 0},     // Right Ledge (basic)
@@ -106,16 +104,36 @@ static const int tileSetData[][7] = {
     {80,105, 16, 12,   0, 0, 0},      // Bridge Vert mid
     {96,105, 16, 12,   0, 0, 0},      // Bridge Ver right
 
-    {64,117, 16, 15,   0, -4, TILE_FLOOR_ACCESSIBLE},   // Smashable rock 65
-    {80,117, 16, 16,   0, -4, TILE_FLOOR_ACCESSIBLE},   // pushable rock 66
+    {64,117, 16, 15,   0, -4, 13},   // Smashable rock 65
+    {80,117, 16, 16,   0, -4, 13},   // pushable rock 66
 
-    {48, 93, 16, 12,   0,  0, TILE_FLOOR_ACCESSIBLE},   // Visible Item pickup 67
+    {48, 93, 16, 12,   0,  0, 13},   // Visible Item pickup 67
 
 };
 
 
 static int tileMapToImageData(struct ascoCell cell){
-    return 13;
+    if(cell.tile == TILE_VOID) return 0;
+    if(cell.tile == TILE_UNKNOWN) return 39;
+    if(cell.tile == TILE_UNRESOLVED) return 39;
+    if(cell.tile == TILE_BLOCKAGE) return 39;
+
+    if(cell.tile == TILE_BLANK) return 13;
+
+    if(cell.tile == TILE_CLIFF){
+        return 1 + ((cell.variant - 1) * 4) + cell.rotation;
+    }
+
+    if(cell.tile == TILE_WATER){
+        if(cell.variant == 0) return 26;
+        return 27 + ((cell.variant - 1) * 4) + cell.rotation;
+    }
+
+    if(cell.tile == TILE_STAIR){
+        return 18 + cell.rotation;
+    }
+
+    return 39;
 }
 
 
@@ -311,6 +329,16 @@ void cairoRenderMap(struct ascoTileMap *map){
                     tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x] + tileSetData[tile][5], tile);
                 */
                 drawTile(scr, tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x] + tileSetData[tile][5], tile);
+                // TODO temporary stair-widening process (since stair termination not yet handled by tileSET
+
+                if(mapCell(map, x, y).tile == TILE_STAIR && (
+                    (mapCell(map, x+1, y).tile == TILE_STAIR && mapCell(map, x, y).rotation == mapCell(map, x+1, y).rotation) || 
+                    (mapCell(map, x, y+1).tile == TILE_STAIR && mapCell(map, x, y).rotation == mapCell(map, x, y+1).rotation)
+                )){
+                    // No bounds check, because stairs will never appear on the map boundary (if they do, I'll eat the segfault as this isn't production-destined code)
+                    int widenerTile = 40 + mapCell(map, x, y).rotation;
+                    drawTile(tcr, tileSet, x * 16 + BUFFER_X + tileSetData[widenerTile][4], yOffset[x] + tileSetData[widenerTile][5], widenerTile);
+                }
 
                 /* TODO widened stair check needs conversion (removal; stairs are now terminated in-map)
                 // Check for widened stairs for special stair graphics

@@ -11,6 +11,10 @@
 * written December 2021
 */
 
+// Place a single tile into the indicated map, as modified by the grid transform
+// Akin to fillRect below, but much faster for not having to iterate over a region
+void placeCell(struct ascoTileMap *map, struct ascoCell *cell, struct gridTransform *t, int x, int y);
+
 
 // Fill the indicated rectangular region of the map with the indicated cell data
 // Subjects the region to a grid transform (i.e. the region provided is in the transform's local space, which is converted to the global space of the map

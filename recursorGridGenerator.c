@@ -76,6 +76,25 @@ static void distributeDimensionalIncreases(int increase, int *dimensions, float 
 
 
 
+// Helper for the Helper for computing sheath data; fetches the z of the parcel at (x, y), or 0 if the requested index is out-of-bounds
+int heightAdjHelperCore(struct parcel *children, int x, int y, int width, int height){
+    if(x < 0 || x >= width || y < 0 || y >= width) return 0;
+    return children[(y * width) + x].transform.z;
+}
+
+// Helper for computing sheath data; populates the child (given by x, y)'s height adjacencies
+//  ...lots of function call overhead *sigh*
+void heightAdjHelper(struct parcel *children, int x, int y, int width, int height, int heightAdj[9]){
+    heightAdj[0] = heightAdjHelperCore(children, x-1, y-1, width, height);  // TL
+    heightAdj[1] = heightAdjHelperCore(children, x  , y-1, width, height);  // T
+    heightAdj[2] = heightAdjHelperCore(children, x+1, y-1, width, height);  // TR
+    heightAdj[3] = heightAdjHelperCore(children, x+1, y  , width, height);  // R
+    heightAdj[4] = heightAdjHelperCore(children, x+1, y+1, width, height);  // BR
+    heightAdj[5] = heightAdjHelperCore(children, x  , y+1, width, height);  // B
+    heightAdj[6] = heightAdjHelperCore(children, x-1, y+1, width, height);  // BL
+    heightAdj[7] = heightAdjHelperCore(children, x-1, y  , width, height);  // L
+    // Self is already set
+}
 
 
 
@@ -84,16 +103,6 @@ static void distributeDimensionalIncreases(int increase, int *dimensions, float 
 // ==================== IDEATOR ====================
 
 void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *signature){
-    /*TODO notes
-        The current procedure for the grid ideator is roughly:
-        1) Choose height offsets (height choice step), and compute sheath data and minimum sheath sizes and store in data struct (sheathing step)
-        2) Based on the pattern, divide the metrics. (metric div step)
-        3) DONE Based on the pattern, generate children.
-        4) DONE Based on the pattern, rotate and mirror children.
-        5) DONE Compute and store per-row/per-col minimum dimensions in data struct
-        6) DONE Compute and store per-row/per-col flex scores in data struct
-        7) DONE Compute overall flex scores for whole parcel (unclear flex amalgam step)
-    */
 
     // Shape has no meaning as yet
     // Parameters mean nothing yet
@@ -105,19 +114,14 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
     // Copy over signature
     dataStruct->signature = *signature;
 
-    // 2) Compute sheath data
-    dataStruct->sheathes = (void *)malloc(sizeof(struct sheathData) * signature->width * signature->height);
-    // TODO compute sheath data
-    for(int i = 0; i < signature->width * signature->height; i++) computeSheathData(&(dataStruct->sheathes[i]));
 
-    
-    // 3) Allocate child memory
+    // 2) Allocate child memory
     parcel->childCount = signature->width * signature->height;
     parcel->children = (void *)malloc(sizeof(struct parcel) * parcel->childCount);
 
-    // 4) Set child types and parameters based on the signature
-    // 5) ...and generate children in same loop
-    // 6) ...and transform children in same loop
+    // 3) Set child types and parameters based on the signature
+    // 4) ...and generate children in same loop
+    // 5) ...and transform children in same loop
     for(int i = 0; i < parcel->childCount; i++){
         // TODO parameter division
         parcel->children[i].shape = signature->shapes[i];
@@ -131,6 +135,33 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
         parcel->children[i].transform.rotation = signature->rotations[i];
         parcel->children[i].transform.flipH = signature->flipHs[i];
         parcel->children[i].transform.flipV = signature->flipVs[i];
+
+        // Set child height
+        parcel->children[i].transform.z = (i % 3) - 1;   // TODO HEIGHT SELECTOR
+    }
+
+
+    // 6) Compute sheath data
+    // This loop could probably be single, but better to be sure as the human than efficient as the computer
+    dataStruct->sheathes = (void *)malloc(sizeof(struct sheathData) * signature->width * signature->height);
+    for(int y = 0; y < signature->height; y++){
+        for(int x = 0; x < signature->width; x++){
+
+            int curIndex = (y * signature->width) + x;
+            struct parcel *child = &(parcel->children[curIndex]);
+
+            int topoAdj[4] = {1, 1, 1, 1};
+            // Infer topo-adj from shape and orientation
+            // TODO ACCOUNT FOR FLIPS; IMPORTANT. can we kitbash some other code?
+
+            // Compute height-adj with a helper
+            int heightAdj[9];
+            heightAdj[8] = child->transform.z;
+            heightAdjHelper(parcel->children, x, y, signature->width, signature->height, heightAdj);
+
+            // Hand data off to the sheath solver
+            computeSheathData(&(dataStruct->sheathes[curIndex]), topoAdj, heightAdj);
+        }
     }
 
 
@@ -139,7 +170,6 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
     int minRowDims[signature->height];
     float xFlexes[signature->width];
     float yFlexes[signature->height];
-    // TODO this function will need a handle for sheath data also
     computeMinDimsAndFlexScores(parcel->children, dataStruct->sheathes, minColDims, minRowDims, xFlexes, yFlexes, signature->width, signature->height);
 
     // 8) Establish overall minimum dimensions and flex scores
@@ -168,80 +198,165 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
 
 
 
+// ==================== SHEATH REALIZER HELPER ====================
+
+// Lookup table for edges to get edge tile
+// Also used by corners in flat edge case
+// Ordered by enum in sheath.h; depends on its being correct
+struct ascoCell edgeLookup[4] = {
+    {TILE_BLOCKAGE, 0, 0, 0},   // Blockage
+    {TILE_UNRESOLVED, 0, 0, 0}, // Flat
+    {TILE_CLIFF, 1, 2, 0},      // Up
+    {TILE_CLIFF, 1, 0, -1}      // Down
+};
+
+struct ascoCell gateLookup[4] = {
+    {TILE_BLANK, 0, 0, 0},      // Blockage
+    {TILE_BLANK, 0, 0, 0},      // Flat
+    {TILE_STAIR, 1, 2, 0},      // Up
+    {TILE_STAIR, 1, 0, -1}      // Down
+};
 
 
+// Helper for realizeSheath
+// I tried to use lookups to help; they clashed with rotation and went down to grim defeat.
+// This is a step to optimize later, for sure.
+static void drawSheathCorner(struct ascoTileMap *map, struct gridTransform *t, int cornerRotation,
+enum sheathCornerTypes self, enum sheathEdgeTypes left, enum sheathEdgeTypes right){
 
-// ==================== GATE-GAZUMPTION HELPERS ====================
+    if(left == SHEATH_EDGE_NONE || right == SHEATH_EDGE_NONE) return;   // No corner if either edge is missing
 
-// There really has to be a cheaper way to do this
-static struct gate gazumperHelper(struct parcel *gazumpee, struct parcel *gazumper, struct sheathData *gazumpeeSheath, struct sheathData *gazumperSheath, int gazumperGateIndex){
-    // Transform gazumper's gate out of gazumper-sheath-space into grid-space
-    // TODO CORRECT FOR INVERSION (if invert is true, gate is flipped)
-    // TODO WE STILL NEED A VARIABLE TO ACCOUNT FOR THE ORIGINAL SHEATH ORIENTATION
-    //          AAAAAAAAAAAAAAAAAAAAAAAAAA
+    // Otherwise corner is drawn
+    struct ascoCell cornerCell = {TILE_BLOCKAGE, 0, cornerRotation, 0};
+    if((left < SHEATH_EDGE_UP) && (right < SHEATH_EDGE_UP)){
+        if(self == SHEATH_CORNER_BLOCKAGE){
+            // Corner is a blockage
+            cornerCell.rotation = 0;
+        } else {
+            // Corner is concave from below
+            cornerCell.tile = TILE_CLIFF;
+            cornerCell.variant = 3;
+            // Inherits rotation
+            cornerCell.z = -1;
+        }
+    } else if (left == SHEATH_EDGE_DOWN && right == SHEATH_EDGE_DOWN){
+        // Convex down case
+        cornerCell.tile = TILE_CLIFF;
+        cornerCell.variant = 2;
+        cornerCell.z = -1;
+    } else if (left == SHEATH_EDGE_UP && right == SHEATH_EDGE_UP){
+        // Concave up case
+        cornerCell.tile = TILE_CLIFF;
+        cornerCell.variant = 3;
+        cornerCell.rotation = (cornerCell.rotation + 2) % 4;
+    } else {
+        // Flat edge case
+        if(left < SHEATH_EDGE_UP){
+            // Copy right
+            cornerCell = edgeLookup[right];
+            cornerCell.rotation = (cornerCell.rotation + cornerRotation + 1) % 4;
+        } else {
+            // Copy left
+            cornerCell = edgeLookup[left];
+            cornerCell.rotation = (cornerCell.rotation + cornerRotation) % 4;
+        }
+    }// Other cases are malformed
 
-    // Transform it out of grid-space into gazumpee-sheath-space
-    // TODO
+    // Determine corner coordinate from rotation value and place corner
+    int x = (cornerRotation & 2) ? 0 : t->width - 1;
+    int y = (cornerRotation == 3 || cornerRotation == 0) ? 0 : t->height - 1;
+    placeCell(map, &cornerCell, t, x, y);
 
-    // Flip if necessary (NOTE: BOTH SELF AND OTHER FLIP.........)
-    // TODO
-    struct gate newGate = gazumper->gates[gazumperGateIndex];
-    printf("Returning gate %d: %d, %d\n", gazumperGateIndex, newGate.position, newGate.size);
-    return newGate; // Sometimes I feel like I'm in it
 }
 
-    // TODO HUGE CONCEPTUAL FLAW: THE GAZUMPER RUNS ACCORDING TO THE CHILD'S RELATIVE ROTATION, BUT THE CHILD HAS BEEN ABSOLUTELY ROTATED BY GTINHERIT.
-    // Option 1: save child rotations elsewhere (wastes space)
-    // Option 2: prerun function to compute gazumped gates in childspace (This one)
-    // HERE WE GO: The gate we're gazumping from; i.e. the index, tells us how the sheath affects. 
-
-    // TODO EVEN HUGER CONCEPTUAL FLAW: GATES ARE NOT SET UNTIL REALIZATION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // SO: CHANGE THE CODE COMPLEEEETELYYYYY!! IT MUST BE DONE PRE FOR TRANSFORMS BUT POST FOR DATA!!! AAAAAAA!!!
-
-    // TODO: THE SHEATHER IS BORKED; IT NEEDS TO KNOW THE ORIGINAL TRANSFORM OF EACH PARCEL TO PLACE THE GATES CORRECTLY!!!!!
-
-    /* TODO notes
-                The grid recursor iterates over every child parcel.
-                gTInherit all the child's gates, bringing them into parentspace.
-                    (do we check for shape or just blindly run gTInherit on all gates? Checking might save us a deal of work)
-                If the parcel is (of type V or) of rotation 0 and on the left edge of the grid, sheathe it and move on (no other parcel is imposing its will)
-                (otherwise)
-                Find the parcel facing this parcel's gate zero (index translation to get the direction, then a bounds check perhaps (though this would only
-                come into play in malformed parcels, no?)
-                Find the gate facing this parcel in the other parcel (index translation of the other parcel)
-                Hand both these gates to the walkway realizer.
-                Hand the second parcel's gate to the sheather as the first parcel's gate zero (this can be where the sheather is invoked; be sure also to invoke
-                it if the parcel doesn't inherit (is on the edge or is type V))
-
-        // New notes
-        For every grid child parcel:
-        1) The gazumpee's gate in question is gate zero; if the parcel is V_SHAPE or faces an edge, handle in some other way*
-        2) If the gazumpee faces up, gazumper's target gate is 1, etc. (gazumperGate = 3 - (gazumpeeGate + 2)%4)
-        3) If the gazumpee is flipped (H if 1 or 3, V if 0 or 2), then the gazumper's gate inverts.
-        4) Take the two resulting gates and feed them to the gazumpee's walkway realizer.
-        5) Clobber the gazumpee's gate zero with the gazumper's gate. Now ready for sheathing pass (which could, in theory, be lumped here also)
 
 
+// Helper for recursorGridRealizer; Realizes the given sheath into the map; the transform provided represents the area of the entire sheath
+static void realizeSheath(struct ascoTileMap *map, struct gridTransform *t, struct sheathData *sheath, gateSet gates){
 
-    // Hand over to gazumpee's walkway realizer
-    
-    */
+    // Draw edges (corners will overwrite a bit if present)
+    if(sheath->edges[0] != SHEATH_EDGE_NONE){
+        // Top edge
+        struct ascoCell cell = edgeLookup[sheath->edges[0]];
+        // cell.rotation = (cell.rotation + 0) % 4;
+        fillRect(map, &cell, t, 0, 0, t->width, 1);
+    }
+    if(sheath->edges[1] != SHEATH_EDGE_NONE){
+        // Right edge
+        struct ascoCell cell = edgeLookup[sheath->edges[1]];
+        cell.rotation = (cell.rotation + 1) % 4;
+        fillRect(map, &cell, t, t->width - 1, 0, 1, t->height);
+    }
+    if(sheath->edges[2] != SHEATH_EDGE_NONE){
+        // Bottom edge
+        struct ascoCell cell = edgeLookup[sheath->edges[2]];
+        cell.rotation = (cell.rotation + 2) % 4;
+        fillRect(map, &cell, t, 0, t->height - 1, t->width, 1);
+    }
+    if(sheath->edges[3] != SHEATH_EDGE_NONE){
+        // Left edge
+        struct ascoCell cell = edgeLookup[sheath->edges[3]];
+        cell.rotation = (cell.rotation + 3) % 4;
+        fillRect(map, &cell, t, 0, 0, 1, t->height);
+    }
+
+
+    // Draw corners    
+    drawSheathCorner(map, t, 3, sheath->corners[0], sheath->edges[3], sheath->edges[0]);    // Top left
+    drawSheathCorner(map, t, 0, sheath->corners[1], sheath->edges[0], sheath->edges[1]);    // Top right
+    drawSheathCorner(map, t, 1, sheath->corners[2], sheath->edges[1], sheath->edges[2]);    // Bottom right
+    drawSheathCorner(map, t, 2, sheath->corners[3], sheath->edges[2], sheath->edges[3]);    // Bottom left
+
+
+    // Draw gates
+    // Transform gates to bring them into sheathspace from corespace
+    if(sheath->edges[0] != SHEATH_EDGE_NONE){
+        gates[0].position++;
+        gates[2].position++;
+    }
+    if(sheath->edges[3] != SHEATH_EDGE_NONE){
+        gates[1].position++;
+        gates[3].position++;
+    }
+
+    // The sheather draws all gates, so all gates must be well-formed
+    if(sheath->edges[3] != SHEATH_EDGE_NONE){
+        // Draw gate 0 (Left edge)
+        struct ascoCell cell = gateLookup[sheath->edges[3]];
+        cell.rotation = (cell.rotation + 3) % 4;
+        fillRect(map, &cell, t, 0, gates[0].position, 1, gates[0].size);
+    }
+    if(sheath->edges[2] != SHEATH_EDGE_NONE){
+        // Draw gate 1 (Bottom edge)
+        struct ascoCell cell = gateLookup[sheath->edges[2]];
+        cell.rotation = (cell.rotation + 2) % 4;
+        fillRect(map, &cell, t, gates[1].position, t->height - 1, gates[1].size, 1);
+    }
+    if(sheath->edges[1] != SHEATH_EDGE_NONE){
+        // Draw gate 2 (Right edge)
+        struct ascoCell cell = gateLookup[sheath->edges[1]];
+        cell.rotation = (cell.rotation + 1) % 4;
+        fillRect(map, &cell, t, t->width - 1, gates[2].position, 1, gates[2].size);
+    }
+    if(sheath->edges[0] != SHEATH_EDGE_NONE){
+        // Draw gate 3 (Top edge)
+        struct ascoCell cell = gateLookup[sheath->edges[0]];
+        //cell.rotation = (cell.rotation + 0) % 4;
+        fillRect(map, &cell, t, gates[3].position, 0, gates[3].size, 1);
+    }
+}
+
+
+
+
+
+
 
 
 
 // ==================== REALIZER ====================
 
 void recursorGridRealizer(void *context, struct parcel *parcel){
-    /*TODO notes
-    The current procedure for the grid realizer is roughly:
-        1) DONE divide target dimensional increases among rows and columns of grid (flex div step)
-        2) DONE Position children accordinly (translate, then inherit)
-        3) DONE realize child parcels
-        4) OBVIATED TRANSFORM CHILD GATES AND RESIDUAL WALKWAY/BLOCKAGES BY CHILD'S GRID TRANSFORM TO BRING THEM INTO ABSOLUTE SPACE
-        5) perform gate-gazumption
-        6) realize sheathes and DONE child walkway/blockages (sheathing step)
-
-    */
 
     // Cast context
     struct ascoTileMap *map = (struct ascoTileMap *)context;
@@ -272,7 +387,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
 
     // 3) Distribute dimensional increases across individual child parcels
     // 4) ...and translate children while we have a loop open for old time's sake
-    int translationCursorX = 0;
+    int translationCursorX = 0; // TODO self's walkway
     int translationCursorY = 0;
     // 5) ...and realize the child parcels as well, come to think of it
     for(int y = 0; y < signature->height; y++){
@@ -317,7 +432,6 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             }
  
 
-
             // 3a) Fetch new width and height, subtracting the child's sheath dimensions
             int sheathWidth, sheathHeight;
             getSheathMinSize(&(dataStruct->sheathes[curIndex]), &sheathWidth, &sheathHeight);
@@ -360,7 +474,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
         }
 
         // Reset "translation cursor" to first column and move down a row
-        translationCursorX = 0;
+        translationCursorX = 0; // TODO self's walkway
         translationCursorY += rowDims[y];
     }
 
@@ -368,15 +482,16 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     // 6) The Gate-gazumption (and walkway realization) process
     for(int i = 0; i < signature->width * signature->height; i++){
         if(gazumperIndices[i] == -1){
-            // Borders edge (or malformed)
+            // Borders edge (or malformed) TODO
         } else {
-            /*
-            struct gate outerGate = gazumperHelper(&(parcel->children[i]), &(parcel->children[gazumperIndices[i]]), 
-                &(dataStruct->sheathes[i]), &(dataStruct->sheathes[gazumperIndices[i]]),
-                gazumptionGateIndices[i]);
-            realizeWalkwayAndShield(map, &(parcel->children[i]), &(parcel->children[i].gates[0]), &outerGate);
-            */
             struct gate gazumpGate = getGate(parcel->children[gazumperIndices[i]].gates, &(oldTransforms[gazumperIndices[i]]), gazumptionGateIndices[i]);
+
+            // Transform the gate based on the sheathes of gazumper and gazumpee
+            int sheathEdgeIndex = (oldTransforms[i].rotation & 1) ? 0 : 3;
+            gazumpGate.position += ((dataStruct->sheathes[gazumperIndices[i]].edges[sheathEdgeIndex] == SHEATH_EDGE_NONE) ? 0:1) - 
+                    ((dataStruct->sheathes[i].edges[sheathEdgeIndex] == SHEATH_EDGE_NONE) ? 0:1);
+
+
             // In order to correct the gate for gazumpee's flips, etc. we need to write the gate to the gazumpee
             // Store the original gate first
             struct gate innerGate = parcel->children[i].gates[0];
@@ -385,26 +500,75 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             int receiverGateIndex = 3 - ((oldTransforms[i].rotation + 3) % 4);
             setGate(parcel->children[i].gates, &(oldTransforms[i]), receiverGateIndex, &gazumpGate);
             
+            // Finally, realize the walkway and shield of the child
             realizeWalkwayAndShield(map, &(parcel->children[i]), &innerGate, &(parcel->children[i].gates[0]));
-
         }
     }
+    // After this loop is run, every child's gate zero has been gazumped.
 
     
-    // TODO sheathing step
+    // 7) Realize sheathes
+    int cursorX = 0;    // TODO self's walkway
+    int cursorY = 0;
+    for(int y = 0; y < signature->height; y++){
+        for(int x = 0; x < signature->width; x++){
+            
+            int curIndex = (y * signature->width) + x;
+            struct parcel *child = &(parcel->children[curIndex]); 
+
+            struct sheathData *sheath = &(dataStruct->sheathes[curIndex]);
+            struct gridTransform sheathTransform = newGridTransform();
+            sheathTransform.x = cursorX;
+            sheathTransform.y = cursorY;
+            sheathTransform.z = child->transform.z;
+            sheathTransform.width = colDims[x];
+            sheathTransform.height = rowDims[y];
+            gTInherit(&(parcel->transform), &sheathTransform);
+
+            // Another kludge deriving from our stubbornness: we have to correct the rotation of the child's gates here too.
+            // Oh, well. Anything's cheaper than ECP.
+            gateSet newGates;
+            newGates[0] = getGate(child->gates, &(oldTransforms[curIndex]), 0);
+            newGates[1] = getGate(child->gates, &(oldTransforms[curIndex]), 1);
+            newGates[2] = getGate(child->gates, &(oldTransforms[curIndex]), 2);
+            newGates[3] = getGate(child->gates, &(oldTransforms[curIndex]), 3);
+
+            // Argh. It gets worse. The child's transform means that the gates have to be transformed too.
+            // We fix this thus: the sheath now draws all four gates under every circumstance, and it's up to the child to ensure all four gates
+            // are well-formed based on its OWN SHAPE.
+
+            realizeSheath(map, &sheathTransform, sheath, newGates);
+
+            // Move the cursor to the top-left corner of the next cell in the row
+            cursorX += colDims[x];
+        }
+
+        // Reset cursor to first column and move down a row
+        cursorX = 0;    // TODO self's walkway
+        cursorY += rowDims[y];
+    }
 
 
 
-    // 7) Generate my own residuals
 
-    // Set walkway (TODO don't forget to account for this in the initial min width!)
+    // 8) Generate my own residuals
+
+    // Set walkway (TODO don't forget to account for this in the initial min width and cursor init and reset conds)
     parcel->walkwayWidth = 0; 
 
     // Set shield (no shield should exist in a grid recursor at all)
     parcel->shieldHeight = 0;
 
 
-    // TODO gates
+    // TODO gates from pattern (remember to make all gates well-formed!)
+    parcel->gates[0].position = parcel->transform.height - 3;
+    parcel->gates[0].size = 0;
+    parcel->gates[1].position = parcel->transform.width - 3;
+    parcel->gates[1].size = 0;
+    parcel->gates[2].position = parcel->transform.height - 3;
+    parcel->gates[2].size = 0;
+    parcel->gates[3].position = parcel->transform.width - 3;
+    parcel->gates[3].size = 0;
 
 
     // Lastly, deallocate child memory

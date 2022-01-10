@@ -38,6 +38,7 @@ void testLakeRealizer(void *context, struct parcel *parcel){
         break;
         case E_SHAPE: case L_SHAPE: case I_SHAPE:
         case TL_SHAPE: case TI_SHAPE:
+        case XL_SHAPE: case XI_SHAPE:
 
             /* TODO RELIC CODE REMOVE
             // Set walkway
@@ -70,13 +71,12 @@ void testLakeRealizer(void *context, struct parcel *parcel){
     }
 
     // Set gates (TODO bad gates here)
-    /*
-    parcel->gates[0] = newGridTransform();
-    parcel->gates[0].x = parcel->walkwayWidth;
-    parcel->gates[0].y = parcel->shieldHeight;
-    parcel->gates[0].width = parcel->minWidth;
-    parcel->gates[0].height = parcel->minHeight;
-    parcel->gates[1] = parcel->gates[0];
-    parcel->gates[2] = parcel->gates[0];
-    */
+    parcel->gates[0].position = 1;
+    parcel->gates[0].size = 2;
+    parcel->gates[1].position = parcel->transform.width - 3;
+    parcel->gates[1].size = 2;
+    parcel->gates[2].position = 1;
+    parcel->gates[2].size = 2;
+    parcel->gates[3].position = parcel->transform.width - 3;
+    parcel->gates[3].size = 2;
 }
