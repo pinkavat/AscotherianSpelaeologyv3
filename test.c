@@ -12,6 +12,8 @@
 
 // TODO makefile (with define for cairo rendering)
 
+// TODO split into "upsampler" (everything we've written so far) which is precompiled and invoked from here
+
 // Cairo renderer
 // Compile with -I/opt/local/include/cairo -L/opt/local/lib -lcairo -lm -std=c11 cairoRenderer/cairoRenderWithID.c
 //#include "cairoRenderer/cairoRenderWithID.h"
@@ -50,6 +52,8 @@ int main(int argc, char **argv){
     struct parcel jimmy;
     jimmy.shape = I_SHAPE;
     jimmy.parameters.recursionDepth = 0;
+    jimmy.parameters.pathWidth = 1;
+    jimmy.parameters.gateWidth = 2;
 
     recursorGridIdeator(&jimmy, &gridSig);
     //selectAndApplyParcelGenerator(&jimmy);
@@ -59,7 +63,7 @@ int main(int argc, char **argv){
 
     // 3) Set target dimensions
     jimmy.transform.width = jimmy.minWidth * 1;
-    jimmy.transform.height = jimmy.minHeight * 2;
+    jimmy.transform.height = jimmy.minHeight * 1;
 
     // 4) Prep a blank map
     struct ascoTileMap *map = newAscoTileMap(gTAbsWidth(&(jimmy.transform)), gTAbsHeight(&(jimmy.transform)));

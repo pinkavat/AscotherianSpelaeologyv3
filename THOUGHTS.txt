@@ -33,6 +33,8 @@
     ASSUMPTIONS TO ADD TO THE DOCS:
         1) Parcels always possess a tile on either side of their gate that doesn't contain the gate, to avoid the corner-clash sheath problem.
         2) All gates are present in the parcel (assumption from sheather). If a parcel doesn't use a gate it sets its size to zero.
+        3) As it stands there's probably an implicit upper limit on gate width ("4" or something, and that would lead to weirdness)
+            --> adjust resizers accordingly??
 
 
 
@@ -786,6 +788,9 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
 
     WE CAN PROTOTYPE THIS SYSTEM INDEPENDENTLY OF THE REST OF THE STRUCTURE: the coordination between item type and parcel generator is handled by the selector.
     The question is: what does it mean to be a "shortcut"?
+
+
+    Ended the day by writing recursor gate inheritance (sans forks and zero-strip), thinking the code was bugged (it wasn't), and getting flustered
 
 
 ===============================================================================

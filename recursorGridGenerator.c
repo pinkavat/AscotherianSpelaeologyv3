@@ -51,8 +51,6 @@ static void computeMinDimsAndFlexScores(struct parcel *children, struct sheathDa
 }
 
 
-
-
 // TODO strategy one: individual row/col score is average of all subscores.
 // Helper for the realizer; distributes one dimensional increase based on the flex scores of either a row or a column
 // Obvious precondition: length is at least one (and both arrays have said length)
@@ -76,15 +74,18 @@ static void distributeDimensionalIncreases(int increase, int *dimensions, float 
 
 
 
+
+
+
 // Helper for the Helper for computing sheath data; fetches the z of the parcel at (x, y), or 0 if the requested index is out-of-bounds
-int heightAdjHelperCore(struct parcel *children, int x, int y, int width, int height){
+static int heightAdjHelperCore(struct parcel *children, int x, int y, int width, int height){
     if(x < 0 || x >= width || y < 0 || y >= width) return 0;
     return children[(y * width) + x].transform.z;
 }
 
 // Helper for computing sheath data; populates the child (given by x, y)'s height adjacencies
 //  ...lots of function call overhead *sigh*
-void heightAdjHelper(struct parcel *children, int x, int y, int width, int height, int heightAdj[9]){
+static void heightAdjHelper(struct parcel *children, int x, int y, int width, int height, int heightAdj[9]){
     heightAdj[0] = heightAdjHelperCore(children, x-1, y-1, width, height);  // TL
     heightAdj[1] = heightAdjHelperCore(children, x  , y-1, width, height);  // T
     heightAdj[2] = heightAdjHelperCore(children, x+1, y-1, width, height);  // TR
@@ -96,6 +97,28 @@ void heightAdjHelper(struct parcel *children, int x, int y, int width, int heigh
     // Self is already set
 }
 
+
+// Lookup table for below function
+int gatePossessionLookup[][4] = {
+    {0, 0, 0, 0},   // V_SHAPE
+    {1, 0, 0, 0},   // E_SHAPE
+    {1, 1, 0, 0},   // L_SHAPE
+    {1, 0, 1, 0},   // I_SHAPE
+    {1, 1, 1, 0},   // TL_SHAPE
+    {1, 1, 1, 0},   // TI_SHAPE
+    {1, 1, 1, 1},   // XL_SHAPE
+    {1, 1, 1, 1},   // XI_SHAPE
+};
+
+// Helper for computing sheath data; determines if the given parcel possesses the given absolute gate, based on its shape
+static int hasGate(enum parcelShapes shape, struct gridTransform *t, int index){
+    // 1) Get local gate index
+    int throwaway;
+    int localIndex = getGateIndex(t, index, &throwaway);
+
+    // 2) Perform lookup in above table
+    return gatePossessionLookup[shape][localIndex];
+}
 
 
 
@@ -123,10 +146,13 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
     // 4) ...and generate children in same loop
     // 5) ...and transform children in same loop
     for(int i = 0; i < parcel->childCount; i++){
-        // TODO parameter division
+
         parcel->children[i].shape = signature->shapes[i];
+        // TODO parameter division
         // TODO temp fractal deepener for debug
         parcel->children[i].parameters.recursionDepth = parcel->parameters.recursionDepth + 1;
+        parcel->children[i].parameters.gateWidth = parcel->parameters.gateWidth;
+        parcel->children[i].parameters.pathWidth = parcel->parameters.pathWidth;
 
         // Generate child
         (*(signature->populatorFunctions[i]))(&(parcel->children[i]));
@@ -153,13 +179,8 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
 
             // TODO add L-case corrector!
             int topoAdj[4] = {1, 1, 1, 1};
-            if(x > 0 && y > 0){ // Only check topo-adj for top and left of inner rects
-                // Infer topo-adj from shape; compensate for flips and orientation by KITBASHING THE GATE INDEXER :)
-                int throwaway;  // To make getGateIndex happy
-                int expectedGateCount = (child->shape / 2) + 1;
-                if(getGateIndex(&(child->transform), 3, &throwaway) >= expectedGateCount) topoAdj[0] = 0; // Top gate
-                if(getGateIndex(&(child->transform), 0, &throwaway) >= expectedGateCount) topoAdj[3] = 0; // Left gate
-            }
+            if(y > 0 && !hasGate(child->shape, &(child->transform), 3)) topoAdj[0] = 0;   // Top gate
+            if(x > 0 && !hasGate(child->shape, &(child->transform), 0)) topoAdj[3] = 0;   // Left gate
             
             
 
@@ -282,7 +303,7 @@ enum sheathCornerTypes self, enum sheathEdgeTypes left, enum sheathEdgeTypes rig
 
 // Helper for recursorGridRealizer; Realizes the given sheath into the map; the transform provided represents the area of the entire sheath
 static void realizeSheath(struct ascoTileMap *map, struct gridTransform *t, struct sheathData *sheath, gateSet gates){
-
+    
     // Draw edges (corners will overwrite a bit if present)
     if(sheath->edges[0] != SHEATH_EDGE_NONE){
         // Top edge
@@ -572,15 +593,77 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     parcel->shieldHeight = 0;
 
 
+
+
+    // TODO the below are affected by fork logic if present....?
     // TODO gates from pattern (remember to make all gates well-formed!)
+    // TODO gate width param
     parcel->gates[0].position = parcel->transform.height - 3;
     parcel->gates[0].size = 0;
-    parcel->gates[1].position = parcel->transform.width - 3;
-    parcel->gates[1].size = 0;
-    parcel->gates[2].position = parcel->transform.height - 3;
-    parcel->gates[2].size = 0;
-    parcel->gates[3].position = parcel->transform.width - 3;
-    parcel->gates[3].size = 0;
+
+    // Note: up above we have a helper called hasGate; but now, thanks to our assumptions about well-formed children,
+    // the scan can simply rely on whether the received gate has size zero or not (no double fetch and no lookup)
+
+    if(parcel->shape == L_SHAPE || parcel->shape == TL_SHAPE || parcel->shape > TI_SHAPE){
+        // Scan bottom children for exit 1 and gazump it
+        int offset = 0;
+        for(int i = 0; i < signature->width; i++){
+            int curIndex = ((signature->height - 1) * signature->width) + i;
+            struct parcel *child = &(parcel->children[curIndex]);
+            struct gate g = getGate(child->gates, &(oldTransforms[curIndex]), 1);
+            if(g.size > 0){
+                // Found a gate, gazump
+                g.position += offset + (dataStruct->sheathes[curIndex].edges[3] == SHEATH_EDGE_NONE ? 0 : 1);
+                parcel->gates[1] = g;
+                break;  // Look no further
+            }
+            offset += colDims[i];
+        }
+    } else {
+        parcel->gates[1].size = 0;
+    }
+
+    
+    // ...juuust too much spec code to be worth refactoring
+    if(parcel->shape == I_SHAPE || parcel->shape >= TI_SHAPE){
+        // Scan right for exit 2 and gazump it
+        int offset = 0;
+        for(int i = 0; i < signature->height; i++){
+            int curIndex = (i * signature->width) + (signature->height - 1);
+            struct parcel *child = &(parcel->children[curIndex]);
+            struct gate g = getGate(child->gates, &(oldTransforms[curIndex]), 2);
+            if(g.size > 0){
+                // Found a gate, gazump
+                g.position += offset + (dataStruct->sheathes[curIndex].edges[0] == SHEATH_EDGE_NONE ? 0 : 1);
+                parcel->gates[2] = g;
+                break;  // Look no further
+            }
+            offset += rowDims[i];
+        }
+    } else {
+        parcel->gates[2].size = 0;
+    }
+
+
+    if(parcel->shape > TI_SHAPE){
+        // Scan top for exit 3 and gazump it
+        int offset = 0;
+        for(int i = 0; i < signature->width; i++){
+            int curIndex = i;
+            struct parcel *child = &(parcel->children[curIndex]);
+            struct gate g = getGate(child->gates, &(oldTransforms[curIndex]), 3);
+            if(g.size > 0){
+                // Found a gate, gazump
+                g.position += offset + (dataStruct->sheathes[curIndex].edges[3] == SHEATH_EDGE_NONE ? 0 : 1);
+                parcel->gates[3] = g;
+                break;  // Look no further
+            }
+            offset += colDims[i];
+        }
+    } else {
+        parcel->gates[3].size = 0;
+    }
+    
 
 
     // Lastly, deallocate child memory

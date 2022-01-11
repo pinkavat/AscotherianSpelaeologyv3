@@ -5,8 +5,8 @@
 
 
 void computeSheathData(struct sheathData *sheath, int topoAdj[4], int heightAdj[9]){
-    // Lifted wholesale from v2, pretty much. It works.  
-        
+    // Lifted wholesale from v2, pretty much. It works.
+  
     unsigned char canCullEdge[4] = {1, 1, 1, 1};    // Initially, it's possible to cull all edges
     
     // Start all corners marked with blockage and all edges marked with flat

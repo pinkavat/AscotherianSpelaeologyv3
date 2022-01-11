@@ -7,7 +7,7 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
 
     // TODO demo testing code
 
-    if(parcel->parameters.recursionDepth >= 1){
+    if(parcel->parameters.recursionDepth >= 2){
         // Base out
         //testLakeIdeator(parcel);
         baseCaseIdeator(parcel);
@@ -16,6 +16,7 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
         // Sample grid signature from above
         enum parcelShapes shapes[4] = {L_SHAPE, L_SHAPE, L_SHAPE, L_SHAPE};
         unsigned int rotations[4] = {3, 0, 2, 1};
+        //unsigned int rotations[4] = {1, 2, 0, 3};
         unsigned int flipHs[4] = {0, 0, 0, 0};
         unsigned int flipVs[4] = {0, 0, 0, 0};
     
