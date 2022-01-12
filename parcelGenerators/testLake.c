@@ -10,6 +10,7 @@ void testLakeIdeator(struct parcel *parcel){
     
     parcel->realizer = &testLakeRealizer;
     parcel->data = NULL;
+    parcel->transform = newGridTransform();
 
     parcel->flexX = 1.0;    // Test lake absolutely wants to resize as much as possible
     parcel->flexY = 1.0;
@@ -70,7 +71,7 @@ void testLakeRealizer(void *context, struct parcel *parcel){
         break;
     }
 
-    // Set gates (TODO bad gates here)
+    // Set gates (TODO bad gates here; refactor with selfHasGate)
     parcel->gates[0].position = 1;
     parcel->gates[0].size = 2;
     parcel->gates[1].position = parcel->transform.width - 3;

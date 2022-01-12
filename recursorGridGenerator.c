@@ -3,8 +3,7 @@
 // recursorGridGenerator.c
 // See header for details
 
-// TODO debug
-#include <stdio.h>
+
 
 // ==================== FLEXIBILITY MANAGEMENT ====================
 
@@ -98,29 +97,6 @@ static void heightAdjHelper(struct parcel *children, int x, int y, int width, in
 }
 
 
-// Lookup table for below function
-int gatePossessionLookup[][4] = {
-    {0, 0, 0, 0},   // V_SHAPE
-    {1, 0, 0, 0},   // E_SHAPE
-    {1, 1, 0, 0},   // L_SHAPE
-    {1, 0, 1, 0},   // I_SHAPE
-    {1, 1, 1, 0},   // TL_SHAPE
-    {1, 1, 1, 0},   // TI_SHAPE
-    {1, 1, 1, 1},   // XL_SHAPE
-    {1, 1, 1, 1},   // XI_SHAPE
-};
-
-// Helper for computing sheath data; determines if the given parcel possesses the given absolute gate, based on its shape
-static int hasGate(enum parcelShapes shape, struct gridTransform *t, int index){
-    // 1) Get local gate index
-    int throwaway;
-    int localIndex = getGateIndex(t, index, &throwaway);
-
-    // 2) Perform lookup in above table
-    return gatePossessionLookup[shape][localIndex];
-}
-
-
 
 
 // ==================== IDEATOR ====================
@@ -136,6 +112,9 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
     struct recursorGridDataStruct *dataStruct = (struct recursorGridDataStruct *)(parcel->data);
     // Copy over signature
     dataStruct->signature = *signature;
+
+    // Blank out transform
+    parcel->transform = newGridTransform();
 
 
     // 2) Allocate child memory
@@ -179,8 +158,8 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
 
             // TODO add L-case corrector!
             int topoAdj[4] = {1, 1, 1, 1};
-            if(y > 0 && !hasGate(child->shape, &(child->transform), 3)) topoAdj[0] = 0;   // Top gate
-            if(x > 0 && !hasGate(child->shape, &(child->transform), 0)) topoAdj[3] = 0;   // Left gate
+            if(y > 0 && !otherHasGate(child->shape, &(child->transform), 3)) topoAdj[0] = 0;   // Top gate
+            if(x > 0 && !otherHasGate(child->shape, &(child->transform), 0)) topoAdj[3] = 0;   // Left gate
             
             
 
@@ -385,7 +364,7 @@ static void realizeSheath(struct ascoTileMap *map, struct gridTransform *t, stru
 
 
 // ==================== REALIZER ====================
-
+#include <stdio.h> // TODO debug
 void recursorGridRealizer(void *context, struct parcel *parcel){
 
     // Cast context
@@ -415,6 +394,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     // of the source rects, in order to place the gates correctly. We're going to piggyback the gazumper on this data also.
     struct gridTransform oldTransforms[signature->width * signature->height];
 
+
     // 3) Distribute dimensional increases across individual child parcels
     // 4) ...and translate children while we have a loop open for old time's sake
     int translationCursorX = 0; // TODO self's walkway
@@ -426,8 +406,6 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             int curIndex = (y * signature->width) + x;
             struct parcel *child = &(parcel->children[curIndex]);
 
-            // Copy out old transform
-            oldTransforms[curIndex] = child->transform;
 
             // *Part 6 sneaks in here* gazumption needs a precompute step to account for rotation inheritance
             // If the child has no gate zero, no gazumption.
@@ -481,10 +459,8 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             child->transform.width = newWidth;
             child->transform.height = newHeight;
 
-            // 3d) Apply width and height to old Transform as well
-            oldTransforms[curIndex].width = newWidth;
-            oldTransforms[curIndex].height = newHeight;
-
+            // 3d) Copy out old transform with new width and height
+            oldTransforms[curIndex] = child->transform;
 
 
             // 4a) Apply child translation, modulated by child's sheath
@@ -604,7 +580,16 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     // Note: up above we have a helper called hasGate; but now, thanks to our assumptions about well-formed children,
     // the scan can simply rely on whether the received gate has size zero or not (no double fetch and no lookup)
 
-    if(parcel->shape == L_SHAPE || parcel->shape == TL_SHAPE || parcel->shape > TI_SHAPE){
+    // The below searchers will give garbage output if the grid signature is malformed; initialize gates to useful failsafes
+    parcel->gates[1].position = 1;
+    parcel->gates[1].size = 0;
+    parcel->gates[2].position = 1;
+    parcel->gates[2].size = 0;
+    parcel->gates[3].position = 1;
+    parcel->gates[3].size = 0;
+
+
+    if(selfHasGate(parcel->shape, 1)){
         // Scan bottom children for exit 1 and gazump it
         int offset = 0;
         for(int i = 0; i < signature->width; i++){
@@ -625,7 +610,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
 
     
     // ...juuust too much spec code to be worth refactoring
-    if(parcel->shape == I_SHAPE || parcel->shape >= TI_SHAPE){
+    if(selfHasGate(parcel->shape, 2)){
         // Scan right for exit 2 and gazump it
         int offset = 0;
         for(int i = 0; i < signature->height; i++){
@@ -645,7 +630,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     }
 
 
-    if(parcel->shape > TI_SHAPE){
+    if(selfHasGate(parcel->shape, 3)){
         // Scan top for exit 3 and gazump it
         int offset = 0;
         for(int i = 0; i < signature->width; i++){
@@ -664,7 +649,6 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
         parcel->gates[3].size = 0;
     }
     
-
 
     // Lastly, deallocate child memory
     free(parcel->children);

@@ -10,7 +10,8 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
     if(parcel->parameters.recursionDepth >= 2){
         // Base out
         //testLakeIdeator(parcel);
-        baseCaseIdeator(parcel);
+        //baseCaseIdeator(parcel);
+        DFSMazeIdeator(parcel);
     } else {
         // Recurse with grid
         // Sample grid signature from above

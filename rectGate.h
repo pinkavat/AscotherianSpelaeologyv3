@@ -48,4 +48,15 @@ struct gate getGate(gateSet set, struct gridTransform *t, int index);
 // Ditto, but setting the gate of the specified index
 void setGate(gateSet set, struct gridTransform *t, int index, struct gate *newGate);
 
+
+
+// These two functions determine whether a gateset contains a specific gate, based on their parcel shape (defined in parcel.h, but the function is here
+// for convenience's sake) (I know, I know.)
+
+// This one is for use on a potentially transformed gate from without. 
+int otherHasGate(int shape, struct gridTransform *t, int index);
+
+// This one is for general use by realizers from within.
+int selfHasGate(int shape, int index);
+
 #endif

@@ -31,10 +31,10 @@ int getGateIndex(struct gridTransform *t, int index, int *invertPtr){
 
 
 
-
 struct gate getGate(gateSet set, struct gridTransform *t, int index){
     int inverted = 0;
     int newIndex = getGateIndex(t, index, &inverted);
+
     struct gate out;
     if(inverted){
         out.position = ((newIndex & 1) ? t->width : t->height) - (set[newIndex].position + set[newIndex].size);
@@ -59,3 +59,29 @@ void setGate(gateSet set, struct gridTransform *t, int index, struct gate *newGa
     }
 }
 
+
+
+// Lookup table for below functions
+int gatePossessionLookup[][4] = {
+    {0, 0, 0, 0},   // V_SHAPE
+    {1, 0, 0, 0},   // E_SHAPE
+    {1, 1, 0, 0},   // L_SHAPE
+    {1, 0, 1, 0},   // I_SHAPE
+    {1, 1, 1, 0},   // TL_SHAPE
+    {1, 1, 1, 0},   // TI_SHAPE
+    {1, 1, 1, 1},   // XL_SHAPE
+    {1, 1, 1, 1},   // XI_SHAPE
+};
+
+int otherHasGate(int shape, struct gridTransform *t, int index){
+    // 1) Get local gate index
+    int throwaway;
+    int localIndex = getGateIndex(t, index, &throwaway);
+
+    // 2) Perform lookup in above table
+    return gatePossessionLookup[shape][localIndex];
+}
+
+int selfHasGate(int shape, int index){
+    return gatePossessionLookup[shape][index];
+}

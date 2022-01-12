@@ -7,15 +7,14 @@
 #define PRINT_COLOUR_WATER "\e[38;5;33m\e[48;5;20m"
 
 struct ascoTile ascoTiles[] = {
-    {"Tile_Void",       "  ", "\e[0m",                  ASCO_TILING_MS},        // The edge of the map; blends smoothly with the absence of a tilemap
-    {"Tile_Unknown",    "??", "\e[38;5;13m\e[7m",       ASCO_TILING_NONE},      // A tile of unrecognized nature; used as a fallback
-    {"Tile_Unresolved", "??", "\e[38;5;240m",           ASCO_TILING_NONE},      // Procedural generation can place anything here as long as it does not obstruct
-    {"Tile_Blockage",   "XX", "\e[38;5;160m\e[1m",      ASCO_TILING_NONE},      // Procedural generation can place anything here but it must obstruct
+    {"Tile_Void",       "  ", "\e[0m",                  ASCO_TILING_MS},
+    {"Tile_Unknown",    "??", "\e[38;5;13m\e[7m",       ASCO_TILING_NONE},
+    {"Tile_Unresolved", "??", "\e[38;5;240m",           ASCO_TILING_NONE},
+    {"Tile_Blockage",   "XX", "\e[38;5;160m\e[1m",      ASCO_TILING_NONE},
 
-    {"Tile_Blank",      "  ", "",                       ASCO_TILING_NONE},      // A flat floor; from the generator's point of view, obligatorily blank
-                                                                                //              (i.e. on a critical path, otherwise use Tile_Unresolved)
+    {"Tile_Blank",      "  ", "",                       ASCO_TILING_NONE},
 
-    {"Tile_Cliff",      "!!", PRINT_COLOUR_ROCK,        ASCO_TILING_MS},        // Trusty old MS-cliffs; the backbone of any AscoSpel map
+    {"Tile_Cliff",      "!!", PRINT_COLOUR_ROCK,        ASCO_TILING_MS},
     {"Tile_Stair",      "!!", "\e[1m\e[38;5;7m",        ASCO_TILING_MS},
 
     {"Tile_Water",      "~~", PRINT_COLOUR_WATER,       ASCO_TILING_MS},
@@ -64,7 +63,7 @@ void freeAscoTileMap(struct ascoTileMap *map){
 
 void rotateCell(struct ascoCell *cell, unsigned int rotation, unsigned int flipH, unsigned int flipV){
     // Effects of rotation/flipping depend on tiling type
-    switch(cell->tile->tilingType){
+    switch(ascoTiles[cell->tile].tilingType){
 
         case ASCO_TILING_NONE:
             // Nontiling tiles don't react to being rotated or flipped
@@ -137,16 +136,16 @@ void printAscoTileMap(struct ascoTileMap *map){
         for(int x = 0; x < map->width; x++){
             struct ascoCell cell = map->cells[(y * map->width) + x];
 
-            printf("%s%s", (x + y) % 2 ? PRINT_COLOUR_BACKGROUND_1 : PRINT_COLOUR_BACKGROUND_2, cell.tile->debugColour);
+            printf("%s%s", (x + y) % 2 ? PRINT_COLOUR_BACKGROUND_1 : PRINT_COLOUR_BACKGROUND_2, ascoTiles[cell.tile].debugColour);
 
             if(cell.tile == TILE_STAIR){
                 // Stairs get special graphics
                 printf("%s\e[0m", stairGraphics[cell.rotation]);
-            } else if(cell.tile->tilingType == ASCO_TILING_MS && cell.variant > 0){
+            } else if(ascoTiles[cell.tile].tilingType == ASCO_TILING_MS && cell.variant > 0){
                 // MS-tile border
                 printf("%s\e[0m", MSGraphics[cell.variant - 1][cell.rotation]);
             } else {
-                printf("%s\e[0m", cell.tile->debugPrint);
+                printf("%s\e[0m", ascoTiles[cell.tile].debugPrint);
             }
         }
         printf("\e[0m\n");

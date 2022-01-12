@@ -6,13 +6,16 @@
         1) Grid Transform autoparent adjust thingy is buggy; transforming, interpreting, transforming, then interpreting again yields bad results.
             adjusting params of gT triggering a re-inherit MIGHT fix problem; or might exacerbate. Needs thinking. As stands, works, but fragile.
         2) L-case still not handled
+        3) We still don't have a satisfactory answer for that Jan 11 "Mystery Stochastic Segfault".
 
     FEATURE / IMPROVEMENT LIST
         1) Flip option for mapHelper autotile
         2) "waterworld" grid recursor kitbash
+            --> Likewise, Iceworld (eats a grid signature, places multiple ice puzzles connected together)
         3) Some sort of error handler (mostly to deal with malformed signatures (or we could sidestep them with a later "signature validity checker"))
         4) Same-same corner culling for sheathes
         5) Add "expansion direction" back in, for picking where to add lengthening parcels?
+        6) Add isolation floodfill to the DFS maze generator
 
     WILD FUTURE OPTIMIZATION LIST
         1) Replace heap-resident parcel data struct pointer with data struct union (of all possible data structs, they're small)?
@@ -791,6 +794,79 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
 
 
     Ended the day by writing recursor gate inheritance (sans forks and zero-strip), thinking the code was bugged (it wasn't), and getting flustered
+
+
+===============================================================================
+    Jan 11
+
+    Let's start with a bit of fun: research into all base-case generators found in the source material and thought up.
+    (not considering things like water, and recursive weirdness)
+    GENERIC GENERATORS:
+        NPC Encounters:
+            - Mighty Pokemon site
+            - Combat Trainer (static watcher, flipping watcher, path rover, dual encounter [obligate vs singleable]) [obligatory vs bypassable]
+            - Doctor (later generations)
+            - Static Goof Supplier
+            - Path-inclusive scripted event (Note: Mt mortar has two NPCs who refer to each other! Actually, this isn't a problem really...)
+        Locks:
+            - RS basic
+            - Strength basic
+        Puzzles:
+            - Larger strength puzzle
+            - One-only goof strength puzzle (must be placed far from entrance to work)
+            - Direction-sensitive strength puzzle (Seafloor cavern) (interferes with logical assumptions, this one; not for our purposes useful)
+            - Chargestone puzzle
+            - Strength boulder-to-pit (PITS are a form of intermap communication; maybe this folds neatly into the initial cond??)
+            - Bike jump puzzle
+            - Cracked-floor puzzle (again, interlevel comm; needs to connect to a "dropsite")
+            - Ice slide puzzle (paired, in some cases, with static NPC encounters!)
+            - Iceblock push puzzle
+            - Rapids (waterworld only)
+            - Pond maze (think Dragon's Den)
+            - FRLG has button-block puzzles; these smack of artifice, and require a bit of tinkering with the grid logic.
+        Structural weirdness:
+            - Mt. Mortar has a "puddle of hills" back left
+            - DFS maze
+            - Extreme hills (wraps a single, identical recursive subparcel with hella sheathes)
+            - Bridges
+        Ledges:
+            - Dual-ledge goof draw
+    BESPOKE FEATURE GENERATORS:
+            - Rock tunnels' stair-fork
+            - Ice rock (twist mtn)
+            - Mt. Silver's Grand Staircase
+
+        (some of these imply a different kind of cavern generator, a "goof cave" where the path runs around the edge to a thing in the center of known size...)
+
+    ALL of these, without exception, will need hooks into the intial condition. 
+    We can assume everything is precompiled (after all, the drawing functions are bound hand and foot to the parcel structure) so each unit need only be
+    flagged.
+    We can create generic WRAPPERS (for instance, we can surround a tilemap with a buffer and paste it wholesale into the map, perhaps even allowing optional
+    rectGates....?)
+    Some functions have HOOKS to OTHER DEPENDENCIES. Pits, ladders, and doors have warp connections to other maps; in all cases some spatial information is also
+    either returned or imposed. NPC encounters and Goof need to be linked to some sort of table in the main code, and it behooves us to keep the generator's
+    sticky fingers off this so it can be easily adjusted later. And there are complications to this practice: placement of items depends on overall place in the
+    cave's experience (no use putting a doctor near the door!)
+    Also, if the generator decides to put down a random NPC that it's allowed to do, it needs a "generic" callback to handle the new NPC. Perhaps this isn't a
+    problem for NPCs, but it certainly is for goof! The generator can put that down willy-nilly.
+    
+    NOTE: the hooks don't vary; it's just a report on the position and rotation/flip for the placed thing. The question is simply to whom / to what the callback
+    is directed. 
+
+
+
+
+    CATASTROPHE. seed 953297 (cairo compile) gave a stochastic segfault.
+    From now on, all builds to be compiled with -fsanitize=address (ALAS, no memory checker for mac, god damn it!)
+    If it happens again, go over my code with a fine-tooth comb.
+
+    The new components are the DFS maze and a rehash of the hasGate logic into a separate file.
+
+
+===============================================================================
+    Jan 12
+
+    Replaced the def of a "tile"; it's now an index into the list, not a pointer (8x space savings, idiot!)
 
 
 ===============================================================================

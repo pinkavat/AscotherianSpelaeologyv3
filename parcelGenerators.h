@@ -3,17 +3,13 @@
 
 /* parcelGenerators.h
 *
-*   Inclusion collator file for all AscoSpel v3 parcel generators, including:
-*       1) the generator Selector (TODO)
-*       2) the grid Recursor (TODO)
-*       3) the Base-Case parcel generators in the parcelGenerators subdirectory
+*   Inclusion collator file for all AscoSpel v3 base-case parcel generators.
 *
 *   A "parcel generator" is a pair of functions, consisting of
 *       a) the PARCEL IDEATOR, which receives a parcel to modify. This parcel's shape and parameters fields must be populated, and act as parameters to
 *           the ideator function.
-*           The ideator sets the realizer func, data ptr, flex, and child array fields of the given parcel,
-*           managing data and child memory as needed. The ideator also sets the grid transform of the parcel to a new blank transform with the dimensions
-*           given as the parcel's minimum dimensions.
+*           The ideator sets the realizer func, data ptr, flex, minimum dimensions, and child array fields of the given parcel,
+*           managing data and child memory as needed. The ideator also sets the grid transform of the parcel to a new blank transform.
 *           The ideator may also receive further parameters as needed; such special cases are handled by the selector (for instance, the grid recursor
 *           receives a grid pattern as well).
 *           NOTE: all functions passed to the grid recursor through its signature are of type void func(struct parcel *).
@@ -31,6 +27,8 @@
 */
 
 #include "parcelGenerators/baseCase.h"
+
+#include "parcelGenerators/DFSMaze.h"
 
 #include "parcelGenerators/testLake.h"
 

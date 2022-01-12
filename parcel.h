@@ -82,8 +82,10 @@
 *       I enters through gate 0 and leaves through gate 2
 *       TL enters through gate 0 and leaves through gate 1, with gate 2 being a flange
 *       TI enters through gate 0 and leaves through gate 2, with gate 1 being a flange
+*
 *       XL enters through gate 0 and leaves through gate 1, with gates 2 and 3 being flanges
 *       XI enters through gate 0 and leaves through gate 2, with gates 1 and 3 being flanges
+*       (These last two have unsolved problems with shields, and are merely here for completeness' sake in other parts of the algorithm)
 *
 *   Also note: order and values of enum is relied upon by other functions, to know how many gates to expect
 */

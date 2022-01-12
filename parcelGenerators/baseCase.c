@@ -13,6 +13,7 @@ void baseCaseIdeator(struct parcel *parcel){
     
     parcel->realizer = &baseCaseRealizer;
     parcel->data = NULL;
+    parcel->transform = newGridTransform();
 
     parcel->flexX = 0.0;    // If we hit this base case we don't want to make it any more obvious
     parcel->flexY = 0.0;    //  hence it doesn't want to grow any bigger
@@ -59,12 +60,12 @@ void baseCaseRealizer(void *context, struct parcel *parcel){
 
     // Set gates
     parcel->gates[0].position = parcel->transform.height - 3;
-    parcel->gates[0].size = parcel->shape > V_SHAPE ? parcel->parameters.gateWidth : 0;
+    parcel->gates[0].size = selfHasGate(parcel->shape, 0) ? parcel->parameters.gateWidth : 0;
     parcel->gates[1].position = parcel->transform.width - 3;
-    parcel->gates[1].size = parcel->shape > E_SHAPE ? parcel->parameters.gateWidth : 0;
+    parcel->gates[1].size = selfHasGate(parcel->shape, 1) ? parcel->parameters.gateWidth : 0;
     parcel->gates[2].position = parcel->transform.height - 3;
-    parcel->gates[2].size = parcel->shape > I_SHAPE ? parcel->parameters.gateWidth : 0;
+    parcel->gates[2].size = selfHasGate(parcel->shape, 2) ? parcel->parameters.gateWidth : 0;
     parcel->gates[3].position = parcel->transform.width - 3;
-    parcel->gates[3].size = parcel->shape > TI_SHAPE ? parcel->parameters.gateWidth : 0;
+    parcel->gates[3].size = selfHasGate(parcel->shape, 3) ? parcel->parameters.gateWidth : 0;
 
 }

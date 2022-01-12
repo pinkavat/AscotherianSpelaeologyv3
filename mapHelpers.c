@@ -60,7 +60,7 @@ void fillRect(struct ascoTileMap *map, struct ascoCell *cell, struct gridTransfo
 
 
 void fillRectAuto(struct ascoTileMap *map, struct ascoCell *cell, struct gridTransform *t, int a, int b, int w, int h, unsigned int fillCore){
-    switch(cell->tile->tilingType){
+    switch(ascoTiles[cell->tile].tilingType){
         case ASCO_TILING_NONE:
             // Nontiling tiles don't react to smart autofilling: fill as normal
             fillRect(map, cell, t, a, b, w, h);
