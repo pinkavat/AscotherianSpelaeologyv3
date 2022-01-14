@@ -17,8 +17,8 @@ void DFSMazeIdeator(struct parcel *parcel){
     parcel->flexX = 1.0;    // Maze is very growable (though perhaps not as much as, say, a lake...?)
     parcel->flexY = 1.0;
 
-    parcel->minWidth = parcel->parameters.gateWidth + 2;
-    parcel->minHeight = parcel->parameters.gateWidth + 2;
+    parcel->minWidth = parcel->parameters.gateWidth + 4;    // Slightly bulgeous, but needed to maintain gatewidth assumption...
+    parcel->minHeight = parcel->parameters.gateWidth + 4;
 
     parcel->children = NULL;
     parcel->childCount = 0;
@@ -113,7 +113,7 @@ void DFSMazeRealizer(void *context, struct parcel *parcel){
     // TODO if we add the punched coords to a queue piggybacking on the maze pattern we could floodfill to find the furthest tile and place reward there
     struct ascoCell blankFloorCell = {TILE_BLANK, 0, 0, 0};
 
-    parcel->gates[0].position = ((rand() % (coreHeight - parcel->parameters.gateWidth)) | 1) + parcel->shieldHeight;
+    parcel->gates[0].position = ((rand() % (coreHeight - parcel->parameters.gateWidth - 1)) | 1) + parcel->shieldHeight;
     if(selfHasGate(parcel->shape, 0)){
         parcel->gates[0].size = parcel->parameters.gateWidth;
         // Holepunch maze through to gate 2
@@ -122,7 +122,7 @@ void DFSMazeRealizer(void *context, struct parcel *parcel){
         parcel->gates[2].size = 0;
     }
 
-    parcel->gates[1].position = ((rand() % (coreWidth - parcel->parameters.gateWidth)) | 1) + parcel->walkwayWidth;
+    parcel->gates[1].position = ((rand() % (coreWidth - parcel->parameters.gateWidth - 1)) | 1) + parcel->walkwayWidth;
     if(selfHasGate(parcel->shape, 1)){
         parcel->gates[1].size = parcel->parameters.gateWidth;
         // Holepunch maze through to gate 1
@@ -131,7 +131,7 @@ void DFSMazeRealizer(void *context, struct parcel *parcel){
         parcel->gates[1].size = 0;
     }
 
-    parcel->gates[2].position = ((rand() % (coreHeight - parcel->parameters.gateWidth)) | 1) + parcel->shieldHeight;
+    parcel->gates[2].position = ((rand() % (coreHeight - parcel->parameters.gateWidth - 1)) | 1) + parcel->shieldHeight;
     if(selfHasGate(parcel->shape, 2)){
         parcel->gates[2].size = parcel->parameters.gateWidth;
         // Holepunch maze through to gate 2

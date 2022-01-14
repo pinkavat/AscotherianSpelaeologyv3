@@ -47,7 +47,6 @@ struct gate getGate(gateSet set, struct gridTransform *t, int index){
 
 
 
-
 void setGate(gateSet set, struct gridTransform *t, int index, struct gate *newGate){
     int inverted = 0;
     int newIndex = getGateIndex(t, index, &inverted);
@@ -62,7 +61,7 @@ void setGate(gateSet set, struct gridTransform *t, int index, struct gate *newGa
 
 
 // Lookup table for below functions
-int gatePossessionLookup[][4] = {
+const int gatePossessionLookup[][4] = {
     {0, 0, 0, 0},   // V_SHAPE
     {1, 0, 0, 0},   // E_SHAPE
     {1, 1, 0, 0},   // L_SHAPE

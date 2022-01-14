@@ -32,6 +32,13 @@ struct recursorGridSignature {
     unsigned int *flipVs;                               // Likewise, for vertical flips         (see gridTransform.h if in doubt)
     
     // TODO PARAMETER DIVISION CLASSES
+    // AND ADD TO COPY/FREE FUNCTIONS!!!!!!!!!!!!!
+
+    int gateSourceIndices[4];                           // If the shape of the grid includes gate n, element n of this array is the index of the
+                                                        // child that provides said gate. (i.e. child's absolute gate n becomes self's gate n)
+                                                        // For now, default to zero if the grid doesn't possess such a gate; fail-bad but noncrashing.
+
+    int gateIsFork[4];                                  // Array of booleans (size 4); Whether gate n is a fork (i.e. requires an extra walkway)
 };
 
 #endif

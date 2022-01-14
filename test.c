@@ -27,14 +27,17 @@ int main(int argc, char **argv){
 
      
     // 1) Sample grid signature
+    
     enum parcelShapes shapes[4] = {L_SHAPE, L_SHAPE, L_SHAPE, L_SHAPE};
     unsigned int rotations[4] = {3, 0, 2, 1};
     //unsigned int rotations[4] = {1, 2, 0, 3};
     unsigned int flipHs[4] = {0, 0, 0, 0};
     unsigned int flipVs[4] = {0, 0, 0, 0};
+    int gateSourceIndices[4] = {0, 0, 0, 0};
+    int gateIsFork[4] = {0, 0, 0, 0};
     
     //cellPopulatorFunctionPtr popFuncs[4] = {&selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator};
-    //cellPopulatorFunctionPtr popFuncs[4] = {&selectAndApplyParcelGenerator, &baseCaseIdeator, &baseCaseIdeator, &selectAndApplyParcelGenerator};
+    //cellPopulatorFunctionPtr popFuncs[4] = {&baseCaseIdeator, &baseCaseIdeator, &baseCaseIdeator, &baseCaseIdeator};
     cellPopulatorFunctionPtr popFuncs[4] = {&baseCaseIdeator, &selectAndApplyParcelGenerator, &baseCaseIdeator, &selectAndApplyParcelGenerator};
     
     struct recursorGridSignature gridSig = {
@@ -43,19 +46,22 @@ int main(int argc, char **argv){
         popFuncs,
         rotations,
         flipHs,
-        flipVs
+        flipVs,
+        {0, 0, 0, 0},
+        {0, 0, 0, 0}
     };
     
     
 
     // 2) Run grid ideator on new parcel
     struct parcel jimmy;
-    jimmy.shape = TI_SHAPE;
+    jimmy.shape = L_SHAPE;
     jimmy.parameters.recursionDepth = 0;
     jimmy.parameters.pathWidth = 1;
     jimmy.parameters.gateWidth = 2;
 
     recursorGridIdeator(&jimmy, &gridSig);
+    //selectAndApplyParcelGenerator(&jimmy);
     //baseCaseIdeator(&jimmy);
 
     //printf("Ideated! %d, %d\n%f, %f\n", jimmy.minWidth, jimmy.minHeight, jimmy.flexX, jimmy.flexY);

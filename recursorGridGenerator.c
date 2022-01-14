@@ -3,6 +3,60 @@
 // recursorGridGenerator.c
 // See header for details
 
+#include <string.h> // For memcpy for signature copying
+
+
+#define WALKWAY_WIDTH parcel->parameters.pathWidth
+
+
+
+// ==================== HEAP MANAGEMENT FOR SIGNATURE COPYING ====================
+
+// Why isn't there a standard memdup, do you suppose?
+static inline void *memdup(void *source, size_t size){
+    void *duplicate = malloc(size);
+    if(duplicate != NULL) memcpy(duplicate, source, size);
+    return duplicate;
+}
+
+
+// Copy a grid signature to the heap and return a pointer to it
+static struct recursorGridSignature *copyGridSignature(struct recursorGridSignature *signature){
+    struct recursorGridSignature *signatureCopy = (void *)malloc(sizeof(struct recursorGridSignature));
+    
+    signatureCopy->width = signature->width;
+    signatureCopy->height = signature->height;
+
+    int numCells = signature->width * signature->height;
+
+    signatureCopy->shapes = memdup(signature->shapes, numCells * sizeof(enum parcelShapes)); 
+    signatureCopy->populatorFunctions = memdup(signature->populatorFunctions, numCells * sizeof(cellPopulatorFunctionPtr)); 
+
+    signatureCopy->rotations = memdup(signature->rotations, numCells * sizeof(unsigned int)); 
+    signatureCopy->flipHs = memdup(signature->flipHs, numCells * sizeof(unsigned int)); 
+    signatureCopy->flipVs = memdup(signature->flipVs, numCells * sizeof(unsigned int)); 
+
+    memcpy(signatureCopy->gateSourceIndices, signature->gateSourceIndices, 4 * sizeof(int));
+    memcpy(signatureCopy->gateIsFork, signature->gateIsFork, 4 * sizeof(int));
+
+    return signatureCopy;
+}
+
+
+// Free a heap-resident grid signature (one that was created with the above function)
+static void freeGridSignatureCopy(struct recursorGridSignature *signature){
+
+    free(signature->shapes);
+    free(signature->populatorFunctions);
+    free(signature->rotations);
+    free(signature->flipHs);
+    free(signature->flipVs);
+
+    free(signature);
+}
+
+
+
 
 
 // ==================== FLEXIBILITY MANAGEMENT ====================
@@ -110,8 +164,9 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
     parcel->realizer = &recursorGridRealizer;
     parcel->data = (void *)malloc(sizeof(struct recursorGridDataStruct));
     struct recursorGridDataStruct *dataStruct = (struct recursorGridDataStruct *)(parcel->data);
+
     // Copy over signature
-    dataStruct->signature = *signature;
+    dataStruct->signatureCopy = copyGridSignature(signature);
 
     // Blank out transform
     parcel->transform = newGridTransform();
@@ -156,12 +211,23 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
             int curIndex = (y * signature->width) + x;
             struct parcel *child = &(parcel->children[curIndex]);
 
-            // TODO add L-case corrector!
             int topoAdj[4] = {1, 1, 1, 1};
+
+            // General check
             if(y > 0 && !otherHasGate(child->shape, &(child->transform), 3)) topoAdj[0] = 0;   // Top gate
             if(x > 0 && !otherHasGate(child->shape, &(child->transform), 0)) topoAdj[3] = 0;   // Left gate
-            
-            
+
+            // Recursor walkway clash preventor
+            if(x == 0 && !otherHasGate(child->shape, &(child->transform), 0)) topoAdj[3] = 0;
+
+            // L-case inelegant solution (TODO improve)
+            // Only works for gate 1 for now, not gate 3
+            int throwaway;
+            if((getGateIndex(&(child->transform), 3, &throwaway) == 1) && selfHasGate(child->shape, 1)) topoAdj[0] = 0;
+            if((getGateIndex(&(child->transform), 2, &throwaway) == 1) && selfHasGate(child->shape, 1)) topoAdj[1] = 0;
+            if((getGateIndex(&(child->transform), 1, &throwaway) == 1) && selfHasGate(child->shape, 1)) topoAdj[2] = 0;
+            if((getGateIndex(&(child->transform), 0, &throwaway) == 1) && selfHasGate(child->shape, 1)) topoAdj[3] = 0;
+           
 
             // Compute height-adj with a helper
             int heightAdj[9];
@@ -182,7 +248,7 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
     computeMinDimsAndFlexScores(parcel->children, dataStruct->sheathes, minColDims, minRowDims, xFlexes, yFlexes, signature->width, signature->height);
 
     // 8) Establish overall minimum dimensions and flex scores
-    parcel->minWidth = 0;
+    parcel->minWidth = WALKWAY_WIDTH;    // Initially add walkway width
     for(int i = 0; i < signature->width; i++) parcel->minWidth += minColDims[i];
     parcel->minHeight = 0;
     for(int i = 0; i < signature->height; i++) parcel->minHeight += minRowDims[i];
@@ -212,14 +278,14 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
 // Lookup table for edges to get edge tile
 // Also used by corners in flat edge case
 // Ordered by enum in sheath.h; depends on its being correct
-struct ascoCell edgeLookup[4] = {
+const struct ascoCell edgeLookup[4] = {
     {TILE_BLOCKAGE, 0, 0, 0},   // Blockage
     {TILE_UNRESOLVED, 0, 0, 0}, // Flat
     {TILE_CLIFF, 1, 2, 0},      // Up
     {TILE_CLIFF, 1, 0, -1}      // Down
 };
 
-struct ascoCell gateLookup[4] = {
+const struct ascoCell gateLookup[4] = {
     {TILE_BLANK, 0, 0, 0},      // Blockage
     {TILE_BLANK, 0, 0, 0},      // Flat
     {TILE_STAIR, 1, 2, 0},      // Up
@@ -362,15 +428,14 @@ static void realizeSheath(struct ascoTileMap *map, struct gridTransform *t, stru
 
 
 
-
 // ==================== REALIZER ====================
-#include <stdio.h> // TODO debug
+
 void recursorGridRealizer(void *context, struct parcel *parcel){
 
     // Cast context
     struct ascoTileMap *map = (struct ascoTileMap *)context;
     struct recursorGridDataStruct *dataStruct = (struct recursorGridDataStruct *)(parcel->data);
-    struct recursorGridSignature *signature = &(dataStruct->signature);
+    struct recursorGridSignature *signature = dataStruct->signatureCopy;
 
 
     // 1) Recompute row/col dimensions and flex scores
@@ -397,7 +462,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
 
     // 3) Distribute dimensional increases across individual child parcels
     // 4) ...and translate children while we have a loop open for old time's sake
-    int translationCursorX = 0; // TODO self's walkway
+    int translationCursorX = WALKWAY_WIDTH; // offset for self's walkway
     int translationCursorY = 0;
     // 5) ...and realize the child parcels as well, come to think of it
     for(int y = 0; y < signature->height; y++){
@@ -411,7 +476,10 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             // If the child has no gate zero, no gazumption.
             if(child->shape != V_SHAPE){
                 // Otherwise, store its neighbor's index and appropriate gate for gazumption
-                switch(child->transform.rotation){
+                unsigned int rotation = child->transform.rotation;
+                const unsigned int rotFlipLookup[4] = {2, 1, 0, 3}; // Another bloody kludge
+                if(child->transform.flipH) rotation = rotFlipLookup[rotation];
+                switch(rotation){
                     case 0: // Gazump from the left
                         if(x > 0){
                             gazumperIndices[curIndex] = (y * signature->width) + (x-1);
@@ -459,15 +527,17 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             child->transform.width = newWidth;
             child->transform.height = newHeight;
 
-            // 3d) Copy out old transform with new width and height
-            oldTransforms[curIndex] = child->transform;
-
 
             // 4a) Apply child translation, modulated by child's sheath
             int sheathCoreX, sheathCoreY;
             getSheathCoreOffset(&(dataStruct->sheathes[curIndex]), &sheathCoreX, &sheathCoreY);
             child->transform.x = translationCursorX + sheathCoreX;
             child->transform.y = translationCursorY + sheathCoreY;
+
+
+            // 4b) KLUDGE HOOK Copy out old transform (before running inheritance pass)
+            oldTransforms[curIndex] = child->transform;
+
 
             // Move the "translation cursor" to the top-left corner of the next cell in the row
             translationCursorX += colDims[x];
@@ -480,7 +550,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
         }
 
         // Reset "translation cursor" to first column and move down a row
-        translationCursorX = 0; // TODO self's walkway
+        translationCursorX = WALKWAY_WIDTH; // offset for self's walkway
         translationCursorY += rowDims[y];
     }
 
@@ -496,7 +566,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             struct gate gazumpGate = getGate(parcel->children[gazumperIndices[i]].gates, &(oldTransforms[gazumperIndices[i]]), gazumptionGateIndices[i]);
 
             // Transform the gate based on the sheathes of gazumper and gazumpee
-            int sheathEdgeIndex = (oldTransforms[i].rotation & 1) ? 0 : 3;
+            int sheathEdgeIndex = (oldTransforms[i].rotation & 1) ? 3 : 0;
             gazumpGate.position += ((dataStruct->sheathes[gazumperIndices[i]].edges[sheathEdgeIndex] == SHEATH_EDGE_NONE) ? 0:1) - 
                     ((dataStruct->sheathes[i].edges[sheathEdgeIndex] == SHEATH_EDGE_NONE) ? 0:1);
 
@@ -506,8 +576,10 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             struct gate innerGate = parcel->children[i].gates[0];
             // Then clobber
             // ...argh, another kludge for compatibility. Save on funcs/relogic though:
-            int receiverGateIndex = 3 - ((oldTransforms[i].rotation + 3) % 4);
+            int receiverGateIndex = (gazumptionGateIndices[i] + 2) % 4;
+
             setGate(parcel->children[i].gates, &(oldTransforms[i]), receiverGateIndex, &gazumpGate);
+
             
             // Finally, realize the walkway and shield of the child
             realizeWalkwayAndShield(map, &(parcel->children[i]), &innerGate, &(parcel->children[i].gates[0]));
@@ -517,7 +589,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
 
     
     // 7) Realize sheathes
-    int cursorX = 0;    // TODO self's walkway
+    int cursorX = WALKWAY_WIDTH;    // offset for self's walkway
     int cursorY = 0;
     for(int y = 0; y < signature->height; y++){
         for(int x = 0; x < signature->width; x++){
@@ -553,7 +625,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
         }
 
         // Reset cursor to first column and move down a row
-        cursorX = 0;    // TODO self's walkway
+        cursorX = WALKWAY_WIDTH;    // offset for self's walkway
         cursorY += rowDims[y];
     }
 
@@ -562,8 +634,8 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
 
     // 8) Generate my own residuals
 
-    // Set walkway (TODO don't forget to account for this in the initial min width and cursor init and reset conds)
-    parcel->walkwayWidth = 0; 
+    // Set walkway
+    parcel->walkwayWidth = WALKWAY_WIDTH; 
 
     // Set shield (no shield should exist in a grid recursor at all)
     parcel->shieldHeight = 0;
@@ -571,16 +643,12 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
 
 
 
-    // TODO the below are affected by fork logic if present....?
-    // TODO gates from pattern (remember to make all gates well-formed!)
-    // TODO gate width param
-    parcel->gates[0].position = parcel->transform.height - 3;
+    // TODO FORKS FORKS FORKS
+
+
+    // In case the grid signature is malformed initialize gates to useful failsafes
+    parcel->gates[0].position = 1;
     parcel->gates[0].size = 0;
-
-    // Note: up above we have a helper called hasGate; but now, thanks to our assumptions about well-formed children,
-    // the scan can simply rely on whether the received gate has size zero or not (no double fetch and no lookup)
-
-    // The below searchers will give garbage output if the grid signature is malformed; initialize gates to useful failsafes
     parcel->gates[1].position = 1;
     parcel->gates[1].size = 0;
     parcel->gates[2].position = 1;
@@ -588,72 +656,48 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     parcel->gates[3].position = 1;
     parcel->gates[3].size = 0;
 
+    if(selfHasGate(parcel->shape, 0)){  // Probably redundant but you never know
+        int sourceChildIndex = signature->gateSourceIndices[0];
+        parcel->gates[0] = getGate(parcel->children[sourceChildIndex].gates, &(oldTransforms[sourceChildIndex]), 0);
+        parcel->gates[0].position += oldTransforms[sourceChildIndex].y;
+    } else {
+        parcel->gates[0].size = 0;
+    }
+
 
     if(selfHasGate(parcel->shape, 1)){
-        // Scan bottom children for exit 1 and gazump it
-        int offset = 0;
-        for(int i = 0; i < signature->width; i++){
-            int curIndex = ((signature->height - 1) * signature->width) + i;
-            struct parcel *child = &(parcel->children[curIndex]);
-            struct gate g = getGate(child->gates, &(oldTransforms[curIndex]), 1);
-            if(g.size > 0){
-                // Found a gate, gazump
-                g.position += offset + (dataStruct->sheathes[curIndex].edges[3] == SHEATH_EDGE_NONE ? 0 : 1);
-                parcel->gates[1] = g;
-                break;  // Look no further
-            }
-            offset += colDims[i];
-        }
+        int sourceChildIndex = signature->gateSourceIndices[1];
+        parcel->gates[1] = getGate(parcel->children[sourceChildIndex].gates, &(oldTransforms[sourceChildIndex]), 1);
+        parcel->gates[1].position += oldTransforms[sourceChildIndex].x;
     } else {
         parcel->gates[1].size = 0;
     }
 
-    
-    // ...juuust too much spec code to be worth refactoring
+
     if(selfHasGate(parcel->shape, 2)){
-        // Scan right for exit 2 and gazump it
-        int offset = 0;
-        for(int i = 0; i < signature->height; i++){
-            int curIndex = (i * signature->width) + (signature->height - 1);
-            struct parcel *child = &(parcel->children[curIndex]);
-            struct gate g = getGate(child->gates, &(oldTransforms[curIndex]), 2);
-            if(g.size > 0){
-                // Found a gate, gazump
-                g.position += offset + (dataStruct->sheathes[curIndex].edges[0] == SHEATH_EDGE_NONE ? 0 : 1);
-                parcel->gates[2] = g;
-                break;  // Look no further
-            }
-            offset += rowDims[i];
-        }
+        int sourceChildIndex = signature->gateSourceIndices[2];
+        parcel->gates[2] = getGate(parcel->children[sourceChildIndex].gates, &(oldTransforms[sourceChildIndex]), 2);
+        parcel->gates[2].position += oldTransforms[sourceChildIndex].y;
     } else {
         parcel->gates[2].size = 0;
     }
 
 
     if(selfHasGate(parcel->shape, 3)){
-        // Scan top for exit 3 and gazump it
-        int offset = 0;
-        for(int i = 0; i < signature->width; i++){
-            int curIndex = i;
-            struct parcel *child = &(parcel->children[curIndex]);
-            struct gate g = getGate(child->gates, &(oldTransforms[curIndex]), 3);
-            if(g.size > 0){
-                // Found a gate, gazump
-                g.position += offset + (dataStruct->sheathes[curIndex].edges[3] == SHEATH_EDGE_NONE ? 0 : 1);
-                parcel->gates[3] = g;
-                break;  // Look no further
-            }
-            offset += colDims[i];
-        }
+        int sourceChildIndex = signature->gateSourceIndices[3];
+        parcel->gates[3] = getGate(parcel->children[sourceChildIndex].gates, &(oldTransforms[sourceChildIndex]), 3);
+        parcel->gates[3].position += oldTransforms[sourceChildIndex].x;
     } else {
         parcel->gates[3].size = 0;
     }
-    
+
+
 
     // Lastly, deallocate child memory
     free(parcel->children);
     // ... and data struct
     free(dataStruct->sheathes);
+    freeGridSignatureCopy(signature);
     free(parcel->data);
 }
 

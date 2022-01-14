@@ -78,8 +78,8 @@ static const int tileSetData[][7] = {
     {96, 34,  8, 22,  11, 0, 0},     // 42: Bottom Stair Widener
     {104,36, 15, 20,   0,-3, 0},     // 43: Left Stair Widener
 
-    {96,117, 16, 12,   0, 0, 0},     // 44: Unresolved floor
-    {194,4, 16, 15,  0, -3, 13},     // 45: "Blockage"
+    {194,19, 16, 12,   0, 0, 0},     // 44: "Unresolved" floor
+    {194,4, 16, 15,  0, -3, 13},     // 45: "Blockage" rock
 
     {144, 5, 24, 50,  -2,-36, 13},   // Ladder Ascending
     {168,24, 26, 23,  -5, -5, 13},   // Ladder Descending

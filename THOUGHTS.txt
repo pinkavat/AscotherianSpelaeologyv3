@@ -17,9 +17,12 @@
         5) Add "expansion direction" back in, for picking where to add lengthening parcels?
         6) Add isolation floodfill to the DFS maze generator
 
+
     WILD FUTURE OPTIMIZATION LIST
         1) Replace heap-resident parcel data struct pointer with data struct union (of all possible data structs, they're small)?
         2) Is recomputing the min dim data for the grid recursor actually cheaper than storing it?
+        3) Signature copying to heap is probably obscenely expensive; find a way around it
+            -> Change grid signatures from SoA to AoS
 
 
     THOUGHTS ABOUT THE POSTPROCESSOR:
@@ -32,12 +35,18 @@
                     Think on't.
             An edgetracer of sorts may still be necessary for the doorways to work...?
             OR THE DOORS ARE PART OF THE ALGO, REALIZED AS E-PARCELS!!!
+        5) Think about a CA Blockage increaser pass (i.e. an UNRESOLVED surrounded on three sides by BLOCKAGE becomes itself BLOCKAGE, enqueues neighbors, etc.)
 
     ASSUMPTIONS TO ADD TO THE DOCS:
         1) Parcels always possess a tile on either side of their gate that doesn't contain the gate, to avoid the corner-clash sheath problem.
         2) All gates are present in the parcel (assumption from sheather). If a parcel doesn't use a gate it sets its size to zero.
         3) As it stands there's probably an implicit upper limit on gate width ("4" or something, and that would lead to weirdness)
             --> adjust resizers accordingly??
+            Gate sizes should remain between 0 and 3 -- I don't really think about the ramifications of gates larger than that and some base generators
+            may yield odd/incorrect behaviour.
+
+
+
 
 
 
@@ -867,6 +876,87 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
     Jan 12
 
     Replaced the def of a "tile"; it's now an index into the list, not a pointer (8x space savings, idiot!)
+    Debugged a noninitialization bug with recursor gates (*may* have been the one from yesterday; keep sanitizing just in case)
+
+    
+    Something we didn't think of yesterday: "things-in-caves" applies only to base-cases, but we may want to allow/disallow recursive constructs
+    (void incursion, bridges, ledge loops, etc.).
+    Also, one observes that if flanges in some parcels depend on locks in the downstream parcel, then the lock inheritance system is different from the
+    "anything" inheritance system.
+    I do so like the idea of pregenerating the experience graph though...
+
+    Also thought of a constraint on recursors: if the algorithm has a list of things that must be on the critpath, it probably means for them to be
+    locked off behind the locks, so locks always come first in recursors.
+
+    Also thought of a minor point: The vertical flip of an I-shaped recursor is entirely up to the selector; the selector should have some faculty to
+    effect this so that the voidmost edge faces the map edge automatically.
+
+    We can write the parameter classing system for grid sigs (hopefully) without knowledge of the things discussed yesterday.
+    We still don't have the rigid definition of what constitues a "path", though.
+    Think in terms of parcels:
+        A parcel can be:
+        1) CRITICAL PATH / CRITICAL TERMINUS (? it behooves us to add the ladders/doors/pits straight into the structure)
+        2) CRITICAL PATH with FLANGE START (T-branches, X-branches)
+        3) FLANGE PATH / FLANGE TERMINUS with REWARD / FLANGE PATH with REWARD
+            (The "ledge puzzle loop" paradigm shows us a bit about how to expect challenges to divvy.
+                the "puzzle" portion gets all the challenge factors, while the "ledge" portion gets the reward)
+        4) SHORTCUT PATH (since shortcuts only appear in forks, they don't talk to the flange logic)
+        5) LEDGE RETURN UPSTREAM
+        6) LEDGE RETURN DOWNSTREAM
+            (We haven't considered ledges. It's useful for a ledge to connect directly to t-branches on the main path, so see below)
+            (Assume we can ask a degree-2 parcel to be a "ledge")
+        7) CRITICAL PATH with LEDGE UPSTREAM OFFSHOOT
+        8) CRITICAL PATH with LEDGE DOWNSTREAM OFFSHOOT
+            (HEY HEY HEY! If we mark Critical t-shapes with "ledge offshoot" logic we can stick more ledges in them if need be!)
+            IN FACT: We can make these the only things in which ledges are actually drawn.
+
+    Think more basically, about the use case.
+    We essentially want to provide the generator with an "experience graph" which is formatted with a bit of spatial data so we don't have to worry about placement
+    edge cases.
+    We'd thought about this before when doing our "research".
+    BUT WE'D ALSO CAUTIONED FOR BEING "BETTER THAN SOURCE" and enjoined ourselves to remember "kishootenketsu" (introduction - maturation - twist - result; but 
+    such a thing is a descriptor of a completely linear experience)
+    
+    The "can-haves" are merely a description of
+        a) What the core mechanic(s) is/are (so the generator can reprise them at will)                             [FORMERLY UNIMPLEMENTED]
+        b) What the player's powers are assumed to be (so the generator can decide to place lock-based puzzles)     [FORMERLY "available locks"]
+        c) What the cave's biome is (so the generator doesn't place anything incongruous)                           [FORMERLY UNIMPLEMENTED]
+    And the only thing that the "must-haves" add to that is
+        a) The locks that the player must traverse
+        b) NPCs/goof that the player can/must touch
+    THERE's ALSO AN ORDER TO THE MUST-HAVEs that ISN'T ARBITRARY:
+        say we wanted to construct Slowpoke Well; we'd make a list of mandatory Rocket Grunts followed by the mandatory Proton/slowpokes prefab.
+        the generator must respect that ordering in placement.
+
+    NOTE: we've inadvertently solved the "talking-to" thing; the realizer is passed a "context" struct, into which we can hook the NPC tables, etc. for paring out
+        by the base-case generators for their own purposes.
+
+    What's the pont of the challenge rating?
+        
+    
+    
+===============================================================================
+    Jan 13: Interlude
+
+    All the theory thinking is boggling and stalling. One component that doesn't depend on any of this is the as-yet-incomplete recursor walkway, so let's
+    give that a stab.
+    
+    So far, so good; but we need to consider the fork case. Forks are a wee bit tricky, as they need an EXIT WALKWAY as well as an ENTRANCE ONE.
+    The exit isn't subject to gazumption, so we can realize it at-level without adding any extra stuff, just compensating for offsets.
+    The entrance is a little trickier.
+    Option 1: Lazy and shite
+        The recursor picks a random gate zero, then draws a "secondary walkway" leading from the post-procced walkway through all forked entries.
+        This is easy to implement, hides under the hood, and probably works fine, but may a) waste space and b) look silly.
+    Option 2: Overcomplex
+        The walkway function is modified to accept any number of internal gates
+        It's in the name really.
+    I do lean towards option 1, because all it would take would be adding a strip of TILE_BLANKS over the entry.
+    We presumably define forkhood in the grid signature.
+
+    SOD THE SCANNING. I don't know why we had it in. "Which gate inherits" and "is fork" are both properties of the signature, and PRESET CONSTANTS.
+    Don't waste the computer's time.
+
+    Sodded the scanning; fixed a hidden bug involving the memory locations of grid signatures more than one level deep.
 
 
 ===============================================================================
