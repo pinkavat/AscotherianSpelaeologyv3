@@ -61,7 +61,6 @@ struct mazeStampCallbackContext {
 };
 
 
-// Helper for fillRect below
 static void mazeStampCallback(void *context, int x, int y, int m, int n){
     // Cast context pointer
     struct mazeStampCallbackContext *contextPtr = (struct mazeStampCallbackContext *)context;

@@ -30,6 +30,8 @@
 
 #include "parcelGenerators/DFSMaze.h"
 
+#include "parcelGenerators/lockSmash.h"
+
 #include "parcelGenerators/testLake.h"
 
 #endif

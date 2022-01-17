@@ -5,8 +5,7 @@
     BUG LIST
         1) Grid Transform autoparent adjust thingy is buggy; transforming, interpreting, transforming, then interpreting again yields bad results.
             adjusting params of gT triggering a re-inherit MIGHT fix problem; or might exacerbate. Needs thinking. As stands, works, but fragile.
-        2) L-case still not handled
-        3) We still don't have a satisfactory answer for that Jan 11 "Mystery Stochastic Segfault".
+        2) We still don't have a satisfactory answer for that Jan 11 "Mystery Stochastic Segfault".
 
     FEATURE / IMPROVEMENT LIST
         1) Flip option for mapHelper autotile
@@ -817,6 +816,7 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
             - Doctor (later generations)
             - Static Goof Supplier
             - Path-inclusive scripted event (Note: Mt mortar has two NPCs who refer to each other! Actually, this isn't a problem really...)
+            - Follow-me Companion start and end triggers
         Locks:
             - RS basic
             - Strength basic
@@ -887,6 +887,7 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
 
     Also thought of a constraint on recursors: if the algorithm has a list of things that must be on the critpath, it probably means for them to be
     locked off behind the locks, so locks always come first in recursors.
+    (NOT QUITE: THE ALGORITHM EXPECTS AN ORDER TO THE MUST-HAVES.)
 
     Also thought of a minor point: The vertical flip of an I-shaped recursor is entirely up to the selector; the selector should have some faculty to
     effect this so that the voidmost edge faces the map edge automatically.
@@ -931,7 +932,7 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
     NOTE: we've inadvertently solved the "talking-to" thing; the realizer is passed a "context" struct, into which we can hook the NPC tables, etc. for paring out
         by the base-case generators for their own purposes.
 
-    What's the pont of the challenge rating?
+    What's the point of the challenge rating?
         
     
     
@@ -958,5 +959,50 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
 
     Sodded the scanning; fixed a hidden bug involving the memory locations of grid signatures more than one level deep.
 
+
+===============================================================================
+    Jan 16: Path and Parcel
+
+    Testing the lock assignment units requires a couple of locking prefabs so we'll see to that first, as an "appetizer". Rock Smash done.
+    Strength Puzzles, like Ice sliding, deserves the full treatment.
+
+    I observed on a walk the other day that there's no such thing as "reward rating". If goof is inserted into the structure, its associated rating means the
+    amount of challenge required to get to it.
+    This actually tells us about the nature of challenge as a whole: it's a property of a path. Traversing said path costs challenge, and the reward at the end
+    is commensurate. Rewards are either goof (prefab, item drop, etc.) or an exit.
+    Challenge scores, however, are not assigned to paths; they are assigned to parcels. Thus:
+        THE CHALLENGE SCORE OF A PARCEL IS THE DIFFICULTY REQUIRED TO CROSS FROM ITS CRITICAL ENTRANCE (gate zero) TO ITS CRITICAL EXIT (exit gate or, in the case
+        of E-parcels, its terminus).
+    Adding new branches, with their own goof appended, comes therefore from somewhere else. Perhaps a static "pool" of goof to be drawn upon?
+    So here's a rough outline of the challenge division algorithm:
+        If my challenge rating is greater than the greatest obligate (NPC) or optional (puzzle) challenge, divide evenly among more than one recursive subunit.
+        If it is less, but I have more than one obligate, divide again (obligate division as in v1)
+        If it is less, and I have no obligate, pick a random puzzle from my puzzle pool. If my challenge rating is greater than it, divide, otherwise realize to that
+        puzzle.
+        If my challenge rating is below a certain threshold and I have no obligates, base out.
+
+    We're back to the question of how to format optionals.
+    Mandatory stuff is in a list, in order of appearance.
+
+    NOTE: just realized: there's no difference between an autogenous flange and a shortcut in terms of permissions. They're both governed by backtracking locks.
+    Thus we can group gridsig cells with a single integer, where positive means member in critical path, while negative means member in shortcut path.
+    Thus we are greenlit to write parameter division skeleton.
+
+    Let's outline the algorithm. We're given a source parameter, a grid signature, and an array of children, whose parameters we seek to initialize and modify.
+    We want to:
+        1) Establish how many groups there are, and which are shortcuts
+        2) Divide params in parallel between the groups (param -> param list)
+        3) Divide params serially within each group (param -> child subset)(mapping issues?)
+        4) Perform param finalization ops (deepen fractal)
+    Here we go: the number of groups is KNOWN; set in the grid signature.
+            Each group gets an initialized backing array of parameter struct pointers, as large as the entire grid for safety.
+            There are two sets of groups: one positive, one negative.
+            As we encounter each parcel, we add a pointer to its param struct to the appropriate list.
+            Then we can operate.
+    Done (hopefully). Next up: how said parameters actually divide. We're going to have to settle on a stratagem.
+
+    
+    
+    
 
 ===============================================================================

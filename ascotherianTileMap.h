@@ -85,8 +85,17 @@ enum ascoTileID {
 
     TILE_CLIFF,             // Trusty old MS-tiling cliffs; the backbone and bane of the AscoSpel paradigm.
     TILE_STAIR,             // Cliffs, but passable.
+    TILE_LEDGE,             // One-way hop-ledges. MS with terminii.
 
-    TILE_WATER,
+    TILE_WATER,             // A still pond with MS-tiling banks.
+    
+    TILE_ROCK_SMALL,        // A nontiling small boulder.
+    TILE_ROCK_TALL,         // Ditto, but graphically different.
+    TILE_ROCK_LARGE,        // A 2x2 tile with a larger boulder.
+
+    TILE_ROCK_SMASH,        // Smashable rock.
+    TILE_ROCK_STRENGTH      // Pushable rock.
+    
 };
 
 

@@ -33,6 +33,7 @@ int main(int argc, char **argv){
     //unsigned int rotations[4] = {1, 2, 0, 3};
     unsigned int flipHs[4] = {0, 0, 0, 0};
     unsigned int flipVs[4] = {0, 0, 0, 0};
+    int pathGroups[4] = {1, 1, 1, 1};
     int gateSourceIndices[4] = {0, 0, 0, 0};
     int gateIsFork[4] = {0, 0, 0, 0};
     
@@ -47,6 +48,9 @@ int main(int argc, char **argv){
         rotations,
         flipHs,
         flipVs,
+        pathGroups,
+        1,
+        0,
         {0, 0, 0, 0},
         {0, 0, 0, 0}
     };
@@ -68,8 +72,8 @@ int main(int argc, char **argv){
 
 
     // 3) Set target dimensions
-    jimmy.transform.width = jimmy.minWidth * 2;
-    jimmy.transform.height = jimmy.minHeight * 2;
+    jimmy.transform.width = jimmy.minWidth * 1;
+    jimmy.transform.height = jimmy.minHeight * 1;
 
     // 4) Prep a blank map
     struct ascoTileMap *map = newAscoTileMap(gTAbsWidth(&(jimmy.transform)), gTAbsHeight(&(jimmy.transform)));

@@ -6,6 +6,7 @@
 #include "walkwayAndShield.h"
 #include "mapHelpers.h"
 #include "recursorGridSignature.h"
+#include "parameterGridDivider.h"
 
 /* recursorGridGenerator.h
 *

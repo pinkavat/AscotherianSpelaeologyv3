@@ -10,7 +10,8 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
     if(parcel->parameters.recursionDepth >= 2 || parcel->shape != L_SHAPE){
         // Base out
         //testLakeIdeator(parcel);
-        baseCaseIdeator(parcel);
+        //baseCaseIdeator(parcel);
+        lockSmashIdeator(parcel);
         //DFSMazeIdeator(parcel);
     } else {
         // Recurse with grid
@@ -29,6 +30,7 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
         unsigned int rotations[4] = {0, 0, 0, 1};
         unsigned int flipHs[4] = {0, 0, 1, 0};
         unsigned int flipVs[4] = {0, 0, 0, 0};
+        int pathGroups[4] = {1, 1, 1, 1};
         cellPopulatorFunctionPtr popFuncs[4] = {&selectAndApplyParcelGenerator, &baseCaseIdeator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator};
     
  
@@ -39,6 +41,9 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
             rotations,
             flipHs,
             flipVs,
+            pathGroups,
+            1,
+            0,
             {0, 2, 0, 0},
             {0, 0, 0, 0}
         };

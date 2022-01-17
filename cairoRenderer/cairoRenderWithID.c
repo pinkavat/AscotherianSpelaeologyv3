@@ -81,36 +81,36 @@ static const int tileSetData[][7] = {
     {194,19, 16, 12,   0, 0, 0},     // 44: "Unresolved" floor
     {194,4, 16, 15,  0, -3, 13},     // 45: "Blockage" rock
 
-    {144, 5, 24, 50,  -2,-36, 13},   // Ladder Ascending
-    {168,24, 26, 23,  -5, -5, 13},   // Ladder Descending
-    {168, 0, 26, 23,  -5, -5, 13},   // Pit
+    {144, 5, 24, 50,  -2,-36, 13},   // 46: Ladder Ascending
+    {168,24, 26, 23,  -5, -5, 13},   // 47: Ladder Descending
+    {168, 0, 26, 23,  -5, -5, 13},   // 48: Pit
     
-    {48, 56, 16, 12,   0, 0, 0},     // Top Ledge (basic)
-    {16, 68, 16, 12,   0, 0, 0},     // Right Ledge (basic)
-    {48, 68, 16, 12,   0, 0, 0},     // Bottom Ledge (basic)
-    { 0, 68, 16, 12,   0, 0, 0},     // Left Ledge (basic)
+    {48, 56, 16, 12,   0, 0, 0},     // 49: Top Ledge (basic)
+    {16, 68, 16, 12,   0, 0, 0},     // 50: Right Ledge (basic)
+    {48, 68, 16, 12,   0, 0, 0},     // 51: Bottom Ledge (basic)
+    { 0, 68, 16, 12,   0, 0, 0},     // 52: Left Ledge (basic)
 
-    {32, 56, 16, 12,   0, 0, 0},      // Top Left Edge
-    {48, 80, 16, 12,   0, 0, 0},      // Top Right Edge
-    {16, 56, 16, 12,   0, 0, 0},      // Right Top Edge
-    {16, 80, 16, 12,   0, 0, 0},      // Right Bottom Edge
-    {32, 68, 16, 12,   0, 0, 0},      // Bottom Left Edge
-    {32, 80, 16, 12,   0, 0, 0},      // Bottom Right Edge
-    { 0, 56, 16, 12,   0, 0, 0},      // Left Top Edge
-    { 0, 80, 16, 12,   0, 0, 0},      // Left Bottom Edge
+    {32, 56, 16, 12,   0, 0, 0},      // 53: Top Left Edge
+    {48, 80, 16, 12,   0, 0, 0},      // 54: Top Right Edge
+    {16, 56, 16, 12,   0, 0, 0},      // 55: Right Top Edge
+    {16, 80, 16, 12,   0, 0, 0},      // 56: Right Bottom Edge
+    {32, 68, 16, 12,   0, 0, 0},      // 57: Bottom Left Edge
+    {32, 80, 16, 12,   0, 0, 0},      // 58: Bottom Right Edge
+    { 0, 56, 16, 12,   0, 0, 0},      // 59: Left Top Edge
+    { 0, 80, 16, 12,   0, 0, 0},      // 60: Left Bottom Edge
 
-    {48,105, 16, 12,   0, 0, 0},      // Bridge Hzont top   
-    {48,117, 16, 12,   0, 0, 0},      // Bridge Hzont mid
-    {48,129, 16, 12,   0, 0, 0},      // Bridge Hzont bottom
+    {48,105, 16, 12,   0, 0, 0},      // 61: Bridge Hzont top   
+    {48,117, 16, 12,   0, 0, 0},      // 62: Bridge Hzont mid
+    {48,129, 16, 12,   0, 0, 0},      // 63: Bridge Hzont bottom
 
-    {64,105, 16, 12,   0, 0, 0},      // Bridge Vert left
-    {80,105, 16, 12,   0, 0, 0},      // Bridge Vert mid
-    {96,105, 16, 12,   0, 0, 0},      // Bridge Ver right
+    {64,105, 16, 12,   0, 0, 0},      // 64: Bridge Vert left
+    {80,105, 16, 12,   0, 0, 0},      // 65: Bridge Vert mid
+    {96,105, 16, 12,   0, 0, 0},      // 66: Bridge Ver right
 
-    {64,117, 16, 15,   0, -4, 13},   // Smashable rock 65
-    {80,117, 16, 16,   0, -4, 13},   // pushable rock 66
+    {64,117, 16, 15,   0, -4, 13},   // 67: Smashable rock
+    {80,117, 16, 16,   0, -4, 13},   // 68: pushable rock
 
-    {48, 93, 16, 12,   0,  0, 13},   // Visible Item pickup 67
+    {48, 93, 16, 12,   0,  0, 13},   // 69: Visible Item pickup
 
 };
 
@@ -135,6 +135,13 @@ static int tileMapToImageData(struct ascoCell cell){
     if(cell.tile == TILE_STAIR){
         return 18 + cell.rotation;
     }
+
+    if(cell.tile == TILE_ROCK_SMALL) return 15;
+    if(cell.tile == TILE_ROCK_TALL) return 16;
+    // TODO large rock
+
+    if(cell.tile == TILE_ROCK_SMASH) return 67;
+    if(cell.tile == TILE_ROCK_STRENGTH) return 68;
 
     return 39;
 }

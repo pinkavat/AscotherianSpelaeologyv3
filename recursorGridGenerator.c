@@ -35,6 +35,10 @@ static struct recursorGridSignature *copyGridSignature(struct recursorGridSignat
     signatureCopy->rotations = memdup(signature->rotations, numCells * sizeof(unsigned int)); 
     signatureCopy->flipHs = memdup(signature->flipHs, numCells * sizeof(unsigned int)); 
     signatureCopy->flipVs = memdup(signature->flipVs, numCells * sizeof(unsigned int)); 
+    
+    signatureCopy->pathGroups = memdup(signature->pathGroups, numCells * sizeof(int));
+    signatureCopy->numCritPaths = signature->numCritPaths;
+    signatureCopy->numShortcutPaths = signature->numShortcutPaths; 
 
     memcpy(signatureCopy->gateSourceIndices, signature->gateSourceIndices, 4 * sizeof(int));
     memcpy(signatureCopy->gateIsFork, signature->gateIsFork, 4 * sizeof(int));
@@ -51,6 +55,7 @@ static void freeGridSignatureCopy(struct recursorGridSignature *signature){
     free(signature->rotations);
     free(signature->flipHs);
     free(signature->flipVs);
+    free(signature->pathGroups);
 
     free(signature);
 }
@@ -176,19 +181,17 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
     parcel->childCount = signature->width * signature->height;
     parcel->children = (void *)malloc(sizeof(struct parcel) * parcel->childCount);
 
-    // 3) Set child types and parameters based on the signature
-    // 4) ...and generate children in same loop
+    // 3) Divide up child parameters
+    divideParametersByGrid(&(parcel->parameters), signature, parcel->children);
+
+    // 4) Set child shapes; generate children
     // 5) ...and transform children in same loop
     for(int i = 0; i < parcel->childCount; i++){
 
+        // Set child shape
         parcel->children[i].shape = signature->shapes[i];
-        // TODO parameter division
-        // TODO temp fractal deepener for debug
-        parcel->children[i].parameters.recursionDepth = parcel->parameters.recursionDepth + 1;
-        parcel->children[i].parameters.gateWidth = parcel->parameters.gateWidth;
-        parcel->children[i].parameters.pathWidth = parcel->parameters.pathWidth;
 
-        // Generate child
+        // Ideate child
         (*(signature->populatorFunctions[i]))(&(parcel->children[i]));
 
         // Transform (rotate and mirror, not translate yet) child from signature

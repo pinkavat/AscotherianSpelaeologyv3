@@ -16,10 +16,18 @@ struct ascoTile ascoTiles[] = {
 
     {"Tile_Cliff",      "!!", PRINT_COLOUR_ROCK,        ASCO_TILING_MS},
     {"Tile_Stair",      "!!", "\e[1m\e[38;5;7m",        ASCO_TILING_MS},
+    {"Tile_Ledge",      "!!", "\e[1m\e[38;5;7m",        ASCO_TILING_MS},    // TODO
 
     {"Tile_Water",      "~~", PRINT_COLOUR_WATER,       ASCO_TILING_MS},
-    {"Tile_LargeRock",  "!!", PRINT_COLOUR_ROCK,        ASCO_TILING_LARGE},
-    // TODO everything else
+
+    {"Tile_Rock_Small", "/\\",PRINT_COLOUR_ROCK,        ASCO_TILING_NONE},
+    {"Tile_Rock_Tall",  "/\\",PRINT_COLOUR_ROCK,        ASCO_TILING_NONE},
+    {"Tile_Rock_Large", "!!", PRINT_COLOUR_ROCK,        ASCO_TILING_LARGE},
+
+
+    {"Tile_Rock_Smash",     "{}", "\e[1m\e[38;5;184m",  ASCO_TILING_NONE},
+    {"Tile_Rock_Strength",  "()",",\e[1m\e[38;5;250m",  ASCO_TILING_NONE},
+
 };
 
 
