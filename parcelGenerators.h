@@ -26,7 +26,11 @@
 * written December 2021
 */
 
+// TODO organize by type
+
 #include "parcelGenerators/baseCase.h"
+
+#include "parcelGenerators/voidBubble.h"
 
 #include "parcelGenerators/DFSMaze.h"
 

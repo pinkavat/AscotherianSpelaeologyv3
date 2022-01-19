@@ -11,8 +11,8 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
         // Base out
         //testLakeIdeator(parcel);
         //baseCaseIdeator(parcel);
-        lockSmashIdeator(parcel);
-        //DFSMazeIdeator(parcel);
+        //lockSmashIdeator(parcel);
+        DFSMazeIdeator(parcel);
     } else {
         // Recurse with grid
         // Sample grid signature from above
@@ -25,15 +25,23 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
         cellPopulatorFunctionPtr popFuncs[4] = {&baseCaseIdeator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator};
         */
         
-        
+        /*
         enum parcelShapes shapes[4] = {I_SHAPE, L_SHAPE, L_SHAPE, L_SHAPE};
         unsigned int rotations[4] = {0, 0, 0, 1};
         unsigned int flipHs[4] = {0, 0, 1, 0};
         unsigned int flipVs[4] = {0, 0, 0, 0};
         int pathGroups[4] = {1, 1, 1, 1};
         cellPopulatorFunctionPtr popFuncs[4] = {&selectAndApplyParcelGenerator, &baseCaseIdeator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator};
-    
- 
+        */
+         
+        enum parcelShapes shapes[4] = {L_SHAPE, V_SHAPE, L_SHAPE, L_SHAPE};
+        unsigned int rotations[4] = {0, 0, 3, 0};
+        unsigned int flipHs[4] = {0, 0, 1, 0};
+        unsigned int flipVs[4] = {0, 0, 0, 0};
+        int pathGroups[4] = {1, 0, 1, 1};
+        cellPopulatorFunctionPtr popFuncs[4] = {&selectAndApplyParcelGenerator, &voidBubbleIdeator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator};
+
+
         struct recursorGridSignature gridSig = {
             2, 2,
             shapes,
@@ -44,7 +52,7 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
             pathGroups,
             1,
             0,
-            {0, 2, 0, 0},
+            {0, 3, 0, 0},   // TODO TODO TODO NEVER FORGET TO CHANGE THE GATE SOURCE THINGIES!!!!!!!!!!!!!!!!!
             {0, 0, 0, 0}
         };
         

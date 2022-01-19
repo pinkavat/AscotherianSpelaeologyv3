@@ -3,12 +3,14 @@
 #include <time.h>   // For seeding PRNG
 
 #include "ascotherianTileMap.h"
+#include "ascoGenContext.h"
 #include "gridTransform.h"
 #include "parcel.h"
 #include "parcelGenerators.h"
 #include "mapHelpers.h"
 #include "walkwayAndShield.h"
 #include "parcelSelector.h"
+#include "postProcessing.h"
 
 // TODO makefile (with define for cairo rendering)
 
@@ -16,7 +18,7 @@
 
 // Cairo renderer
 // Compile with -I/opt/local/include/cairo -L/opt/local/lib -lcairo -lm -std=c11 cairoRenderer/cairoRenderWithID.c
-// #include "cairoRenderer/cairoRenderWithID.h"
+//#include "cairoRenderer/cairoRenderWithID.h"
 
 
 int main(int argc, char **argv){
@@ -74,26 +76,44 @@ int main(int argc, char **argv){
     // 3) Set target dimensions
     jimmy.transform.width = jimmy.minWidth * 1;
     jimmy.transform.height = jimmy.minHeight * 1;
+    jimmy.transform.x = 1;  // Sheath outer comp.
+    jimmy.transform.y = 1;
 
     // 4) Prep a blank map
-    struct ascoTileMap *map = newAscoTileMap(gTAbsWidth(&(jimmy.transform)), gTAbsHeight(&(jimmy.transform)));
+    struct ascoTileMap *map = newAscoTileMap(gTAbsWidth(&(jimmy.transform)) + 2, gTAbsHeight(&(jimmy.transform)) + 2);
     // (set with unknowns to check, as void is hard to see)
+    /*
     for(int y = 0; y < map->height; y++){
         for(int x = 0; x < map->width; x++){
             map->cells[(y * map->width) + x].tile = TILE_VOID;
         }
-    }
+    }*/
+    
+    printf("Realizing map: %d by %d\n", map->width, map->height);
+
+    struct ascoGenContext context = {map};
 
     // 5) Realize parcel into map
-    jimmy.realizer(map, &jimmy);
+    jimmy.realizer(&context, &jimmy);
 
     // 6) Handle residuals
     realizeWalkwayAndShield(map, &jimmy, &(jimmy.gates[0]), &(jimmy.gates[0]));
 
+    // 7) Sheath entire map (NOT appropriate to use a parcel func to do this...)
+    struct ascoCell borderCell = {TILE_CLIFF, 0, 0, 0};
+    struct gridTransform t = newGridTransform();
+    t.width = map->width;
+    t.height = map->height;
+    fillRectAuto(map, &borderCell, &t, 0, 0, map->width, map->height, 0); 
+ 
+    // 8) Post-process
+    tempPostProcess(map);
     
-    // 7) Render
+    // 9) Print/Render
     printAscoTileMap(map);
     //cairoRenderMap(map);
+
+    // 10) Clean up
     freeAscoTileMap(map);
 
 }

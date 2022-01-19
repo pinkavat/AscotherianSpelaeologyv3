@@ -124,6 +124,7 @@ static int tileMapToImageData(struct ascoCell cell){
     if(cell.tile == TILE_BLANK) return 13;
 
     if(cell.tile == TILE_CLIFF){
+        if(cell.variant == 0) return 14;    // flat cliff doubles as inaccessible floor
         return 1 + ((cell.variant - 1) * 4) + cell.rotation;
     }
 
@@ -146,81 +147,6 @@ static int tileMapToImageData(struct ascoCell cell){
     return 39;
 }
 
-
-/* TODO old translator; eliminate
-// Translate tileIDs.h tile IDs to the above array index
-static int tileMapToImageData(int tile){
-    switch(tile){
-        case TILE_VOID: return 0;
-        case TILE_BLOCKAGE: return tileMapToImageData(TILE_PLACEHOLDER);
-        case TILE_FLOOR_ACCESSIBLE: return 13;
-        case TILE_FLOOR_INACCESSIBLE: return 14;
-        case TILE_STAIR_TOP: return 18;
-        case TILE_STAIR_RIGHT: return 19;
-        case TILE_STAIR_BOTTOM: return 20;
-        case TILE_STAIR_LEFT: return 21;
-        case TILE_CLIFF_TL_CONVEX: return 1;
-        case TILE_CLIFF_TR_CONVEX: return 2;
-        case TILE_CLIFF_BL_CONVEX: return 3;
-        case TILE_CLIFF_BR_CONVEX: return 4;
-        case TILE_CLIFF_BR_CONCAVE: return 5;
-        case TILE_CLIFF_BL_CONCAVE: return 6;
-        case TILE_CLIFF_TR_CONCAVE: return 7;
-        case TILE_CLIFF_TL_CONCAVE: return 8;
-        case TILE_CLIFF_TOP: return 9;
-        case TILE_CLIFF_RIGHT: return 10;
-        case TILE_CLIFF_BOTTOM: return 11;
-        case TILE_CLIFF_LEFT: return 12;
-        case TILE_ROCK_SMALL: return 15;
-        case TILE_ROCK_TALL: return 16;
-        case TILE_ROCK_LARGE_TL: return 17;         // TODO large rock non-TL maps to blank floor (non-modular for floor types)
-        case TILE_ROCK_LARGE_TR: return 13;
-        case TILE_ROCK_LARGE_BL: return 13;
-        case TILE_ROCK_LARGE_BR: return 13;
-        case TILE_EXTERIOR_DOOR_TOP: return 22;      // TODO currently maps to interior doors
-        case TILE_EXTERIOR_DOOR_RIGHT: return 23;
-        case TILE_EXTERIOR_DOOR_BOTTOM: return 24;
-        case TILE_EXTERIOR_DOOR_LEFT: return 25;
-        case TILE_INTERIOR_DOOR_TOP: return 22;
-        case TILE_INTERIOR_DOOR_RIGHT: return 23;
-        case TILE_INTERIOR_DOOR_BOTTOM: return 24;
-        case TILE_INTERIOR_DOOR_LEFT: return 25;
-        case TILE_LADDER_ASCENDING: return 44;
-        case TILE_LADDER_DESCENDING: return 45;
-        case TILE_PIT: return 46;
-        case TILE_LEDGE_TOP_LEFT: return 51;
-        case TILE_LEDGE_TOP_CENTER: return 47;
-        case TILE_LEDGE_TOP_RIGHT: return 52;
-        case TILE_LEDGE_RIGHT_TOP: return 53;
-        case TILE_LEDGE_RIGHT_CENTER: return 48;
-        case TILE_LEDGE_RIGHT_BOTTOM: return 54;
-        case TILE_LEDGE_BOTTOM_RIGHT: return 56;
-        case TILE_LEDGE_BOTTOM_CENTER: return 49;
-        case TILE_LEDGE_BOTTOM_LEFT: return 55;
-        case TILE_LEDGE_LEFT_BOTTOM: return 58;
-        case TILE_LEDGE_LEFT_CENTER: return 50;
-        case TILE_LEDGE_LEFT_TOP: return 57;
-        case TILE_WATER_TL_CONVEX: return 26;
-        case TILE_WATER_TR_CONVEX: return 27;
-        case TILE_WATER_BL_CONVEX: return 28;
-        case TILE_WATER_BR_CONVEX: return 29;
-        case TILE_WATER_BR_CONCAVE: return 30;
-        case TILE_WATER_BL_CONCAVE: return 31;
-        case TILE_WATER_TR_CONCAVE: return 32;
-        case TILE_WATER_TL_CONCAVE: return 33;
-        case TILE_WATER_TOP: return 34;
-        case TILE_WATER_RIGHT: return 35;
-        case TILE_WATER_BOTTOM: return 36;
-        case TILE_WATER_LEFT: return 37;
-        case TILE_WATER_CENTER: return 38;
-        case TILE_PLACEHOLDER: return 39;
-        case TILE_ITEM_PICKUP: return 67;
-        case TILE_SMASHABLE_ROCK: return 65;
-        case TILE_PUSHABLE_ROCK: return 66;
-        default: return tileMapToImageData(TILE_PLACEHOLDER);
-    }
-}
-*/
 
 
 

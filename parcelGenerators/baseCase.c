@@ -33,7 +33,7 @@ void baseCaseIdeator(struct parcel *parcel){
 
 void baseCaseRealizer(void *context, struct parcel *parcel){
     // Cast context
-    struct ascoTileMap *map = (struct ascoTileMap *)context;
+    struct ascoTileMap *map = ((struct ascoGenContext *)context)->map;
 
     // The base case must be able to handle all possible shapes
     switch(parcel->shape){

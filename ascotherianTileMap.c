@@ -7,14 +7,14 @@
 #define PRINT_COLOUR_WATER "\e[38;5;33m\e[48;5;20m"
 
 struct ascoTile ascoTiles[] = {
-    {"Tile_Void",       "  ", "\e[0m",                  ASCO_TILING_MS},
+    {"Tile_Void",       "  ", "\e[0m",                  ASCO_TILING_FENCE},
     {"Tile_Unknown",    "??", "\e[38;5;13m\e[7m",       ASCO_TILING_NONE},
     {"Tile_Unresolved", "??", "\e[38;5;240m",           ASCO_TILING_NONE},
     {"Tile_Blockage",   "XX", "\e[38;5;160m\e[1m",      ASCO_TILING_NONE},
 
     {"Tile_Blank",      "  ", "",                       ASCO_TILING_NONE},
 
-    {"Tile_Cliff",      "!!", PRINT_COLOUR_ROCK,        ASCO_TILING_MS},
+    {"Tile_Cliff",      "██", PRINT_COLOUR_ROCK,        ASCO_TILING_MS},
     {"Tile_Stair",      "!!", "\e[1m\e[38;5;7m",        ASCO_TILING_MS},
     {"Tile_Ledge",      "!!", "\e[1m\e[38;5;7m",        ASCO_TILING_MS},    // TODO
 

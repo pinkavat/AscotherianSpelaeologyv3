@@ -3,6 +3,7 @@
 
 #include "../parcel.h"      // and gridTransform.h and parcelGenParameters.h thereby
 #include "../mapHelpers.h"  // and ascotherianTileMap.h thereby
+#include "../ascoGenContext.h"
 
 /* DFSMaze.h
 *

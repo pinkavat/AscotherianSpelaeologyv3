@@ -50,7 +50,7 @@
 
 /* Realization function:
 *       In order to convert the parcel from an abstract representation to a concrete one, each parcel needs a realizer. This function
-*       takes the parcel it is referenced in and a context (usually a tilemap) as parameters. The function then "realizes" said parcel into the context.
+*       takes the parcel it is referenced in and a context (tilemap plus hooks) as parameters. The function then "realizes" said parcel into the context.
 *
 *   These functions, in general, do the following:
 *       1) Precompute necessary adjustments (e.g. distribute size increases, finalize their children's positions)

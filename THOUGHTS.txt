@@ -6,6 +6,8 @@
         1) Grid Transform autoparent adjust thingy is buggy; transforming, interpreting, transforming, then interpreting again yields bad results.
             adjusting params of gT triggering a re-inherit MIGHT fix problem; or might exacerbate. Needs thinking. As stands, works, but fragile.
         2) We still don't have a satisfactory answer for that Jan 11 "Mystery Stochastic Segfault".
+        3) TOPOLOGICAL ADJACENCY BADNESS
+        4) Minor graphical bugs in the cairo renderer: when a concave corner joins a convex one directly there's a strip of beige where none should be
 
     FEATURE / IMPROVEMENT LIST
         1) Flip option for mapHelper autotile
@@ -34,7 +36,7 @@
                     Think on't.
             An edgetracer of sorts may still be necessary for the doorways to work...?
             OR THE DOORS ARE PART OF THE ALGO, REALIZED AS E-PARCELS!!!
-        5) Think about a CA Blockage increaser pass (i.e. an UNRESOLVED surrounded on three sides by BLOCKAGE becomes itself BLOCKAGE, enqueues neighbors, etc.)
+        5) Think about an L-sys Blockage increaser pass (i.e. an UNRESOLVED surrounded on three sides by BLOCKAGE becomes itself BLOCKAGE, enqueues neighbors, etc.)
 
     ASSUMPTIONS TO ADD TO THE DOCS:
         1) Parcels always possess a tile on either side of their gate that doesn't contain the gate, to avoid the corner-clash sheath problem.
@@ -43,6 +45,10 @@
             --> adjust resizers accordingly??
             Gate sizes should remain between 0 and 3 -- I don't really think about the ramifications of gates larger than that and some base generators
             may yield odd/incorrect behaviour.
+        NOTES FOR HEIGHT SELECTOR:
+            1) Water is always the same height intraparcel (-1 presumably?)
+            2) Void is always 0.
+            3) Recursors are always 0 or -1 (if they're going to contain valid void...?)
 
 
 
@@ -1001,8 +1007,86 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
             Then we can operate.
     Done (hopefully). Next up: how said parameters actually divide. We're going to have to settle on a stratagem.
 
+   
+    If we're bored doing param work, we could make a start on postprocessing; the Void-bubble expander needs a bit of careful thought.
+    There are a handful of cases. We assume the bubble is well-formed (i.e. if it's too small it's already flattened out to inaccessible floor)
+    WE CAN ALSO ASSUME THAT THE HEIGHT SELECTOR PUTS VOID AT +1.
+    This means that the void bubble is bordered on inner sides by DOWN cliff or nothing, and on the others something it has to check.
+    If the rect between the bubble and the map border contains anything other than flat cliff, the replacement fails.
+    The tricky part comes from the potential BLEND of UP AND DOWN CLIFFS that the edge may contain.
+    Also we have the void parcel's corner edges to worry about......... Maybe we should request placement at 0 instead...? but that doesn't really work...
+
+    SIMPLIFY OUR ASSUMPTIONS.
+    NEW ASSUMPTION: A recursor can be at 0 or -1 only; never 1. This guarantees all cliffs next to VOID are concave.
+
+
+    One other thing we hadn't thought of: RELATIVE WEIGHTS of possible parcels, which can be arbitrary for any given map
     
-    
-    
+
+===============================================================================
+    Jan 17: Void bubbles
+
+    We're shelving the parameter divider for now; there's no reason to get it all set up before we've worked out void-incursion.
+    The next step, therefore, is adding in and testing VOID BUBBLES.
+
+    Our original observation was that if a void bubble's z * 2 is greater than its least dimension, then it can't possibly connect to the world edge.
+    This is not quite true; the void can connect if the dimension in question is the one FACING the void.
+    Multiple sides of a parcel can face the void.
+
+    Also, unconnectable voids of sufficient size can form into freestanding voids.
+
+    We're expanding our assumptions about the direction of height-change. Henceforth, all recursors are at 0 or -1, and void parcels are placed at height zero.
+    Thus, the void can check valid expansion based on whether all tiles between it and the edge are descending cliffs.
+    We don't need to check corners on a void incursion with two or more valid edges: if those edges are all cliff to the map edge, there's no meaningful way the
+    generator could have placed something in the corner between.
+
+    The job of the void PARCEL is simple: to hand its final dimensions, as an inherited rect transform, off to the solver, which has to run as part of the postproc
+    step. The solver can be hooked into the context pointer (with a bit of elbow grease). We can then untransform the rect to rerotate it into global space
+    (easily), thus allowing ourselves to reason in postproc terms. In fact, the base parcel realizer can do that itself.
+
+    Hmm. This idea seems like it's a bit quirky vis-a-vis unaligned subvoids (which we'll need to make the cave look like anything...).
+    Hmm. Is that a future concern...?
+
+    Step 1: get test case going, with hook for postproc reporting.
+    Done.
+    Visible problem: retransforming the parcel's transform to get the true world rect. Perhaps this ought to be a generally available function...?
+
+    ALSO: Scanning all those tiles is a significant drawback. Instead, we observe:
+        Since the recursor height can either deepen or stay the same, If the void is on the world-border, then it is edged only by concave cliffs.
+        We know exactly how many layers of cliffs there are by the height.
+    	It's tempting, therefore, to reintroduce world-border-adjacency.
+    HOWEVER, we abandoned that initially becase IT DOES NOT PERMIT RECURSIVE APPENDING OF VOIDS.
+    Neither does our existing strategy, really; we have to plan for overlaps and understand PARTIAL OVERLAP THEORY better.
+    WAIT: The grid. Oh, thou lovely grid. Oh, thou saviour of my mind and ender of my frustration.
+    The grid is to our rescue again; for see! An "interior void" which may connect to the border through another void is, by the nature of the grid, 
+    GUARANTEED to fall in its entirety within the bounds of that exterior void!
+    Actually there's a bit of rain on the parade: this is true only if the outer void is a higher recursion level than the inner void. Inner voids at the same
+    recursion level could overlap to any degree, by dint of their sibling parcels being of any size.
+
+    So: we either sacrifice the "adjacent inner voids" and use world-border-adjacency handing-down to obviate any scanning, or we work out some sort of super-clever
+    algorithm thingy. Think harder.
+
+
+===============================================================================
+    Jan 18
+
+    Void postproc is shaping up to be a bit more complex than we previously surmised.
+    Perhaps there's a better solution involving post-processing individual MS replacement (we set the void regions to void, then crawl around resolving height discrepancies)
+    The map-edge void is of height 1 (the initial generator is height zero, so the void must be height 1)
+
+    OR:
+
+    We draw the voids normally, with wrapped cores up to height 1 (or flat right away if that's impossible)
+    THEN
+    We use a case of the super-clever MS-cliff expander to JOIN VOIDS!
+    So the real question becomes devising the thing we were already going to devise: the Cliff Expander.
+
+    Started writing the cliff-expander based on MS-tiling. Looks promising.
+
+    BUG FOUND IN TOPO-ADJ SYSTEM: We REALLLLY need that same-same edge pruning (or whatever it is). It's creating unconnected floor regions when a parcel borders a void.
+    RECTS SHOULD BLOCK on ALL FACES or something.
+
+    MASSIVE STONKING SUCCESS with void-handling in the postprocessor step. It all just works, like a dream.
+    No need to have a specialized void realizer now, really. Remove and fold into base-case??
 
 ===============================================================================

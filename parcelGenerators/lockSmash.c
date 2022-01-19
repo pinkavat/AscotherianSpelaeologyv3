@@ -50,7 +50,7 @@ static void drawCallback(void *context, int x, int y, int m, int n){
 
 void lockSmashRealizer(void *context, struct parcel *parcel){
     // Cast context
-    struct ascoTileMap *map = (struct ascoTileMap *)context;
+    struct ascoTileMap *map = ((struct ascoGenContext *)context)->map;
 
     // Determine square core size
     int coreSize = min(min(parcel->transform.width - parcel->parameters.pathWidth, parcel->transform.height), MAX_CORE_SIZE);

@@ -200,8 +200,13 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
         parcel->children[i].transform.flipV = signature->flipVs[i];
 
         // Set child height
-        parcel->children[i].transform.z = (i % 3) - 1;   // TODO HEIGHT SELECTOR
+        //parcel->children[i].transform.z = (i % 3) - 1;   // TODO HEIGHT SELECTOR
         //parcel->children[i].transform.z = 0;   // TODO HEIGHT SELECTOR
+        if(parcel->parameters.recursionDepth == 0){
+            parcel->children[i].transform.z = -1;
+        } else {
+            parcel->children[i].transform.z = 1;
+        }
     }
 
 
@@ -436,7 +441,8 @@ static void realizeSheath(struct ascoTileMap *map, struct gridTransform *t, stru
 void recursorGridRealizer(void *context, struct parcel *parcel){
 
     // Cast context
-    struct ascoTileMap *map = (struct ascoTileMap *)context;
+    struct ascoGenContext *castContext = (struct ascoGenContext *)context;
+    struct ascoTileMap *map = castContext->map;
     struct recursorGridDataStruct *dataStruct = (struct recursorGridDataStruct *)(parcel->data);
     struct recursorGridSignature *signature = dataStruct->signatureCopy;
 
@@ -568,24 +574,32 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
         } else {
             struct gate gazumpGate = getGate(parcel->children[gazumperIndices[i]].gates, &(oldTransforms[gazumperIndices[i]]), gazumptionGateIndices[i]);
 
-            // Transform the gate based on the sheathes of gazumper and gazumpee
-            int sheathEdgeIndex = (oldTransforms[i].rotation & 1) ? 3 : 0;
-            gazumpGate.position += ((dataStruct->sheathes[gazumperIndices[i]].edges[sheathEdgeIndex] == SHEATH_EDGE_NONE) ? 0:1) - 
-                    ((dataStruct->sheathes[i].edges[sheathEdgeIndex] == SHEATH_EDGE_NONE) ? 0:1);
+            if(gazumpGate.size == 0){
+
+                // Neighbor doesn't have that gate, fail safely
+                realizeWalkwayAndShield(map, &(parcel->children[i]), &(parcel->children[i].gates[0]), &(parcel->children[i].gates[0]));
+
+            } else {
+
+                // Transform the gate based on the sheathes of gazumper and gazumpee
+                int sheathEdgeIndex = (oldTransforms[i].rotation & 1) ? 3 : 0;
+                gazumpGate.position += ((dataStruct->sheathes[gazumperIndices[i]].edges[sheathEdgeIndex] == SHEATH_EDGE_NONE) ? 0:1) - 
+                        ((dataStruct->sheathes[i].edges[sheathEdgeIndex] == SHEATH_EDGE_NONE) ? 0:1);
 
 
-            // In order to correct the gate for gazumpee's flips, etc. we need to write the gate to the gazumpee
-            // Store the original gate first
-            struct gate innerGate = parcel->children[i].gates[0];
-            // Then clobber
-            // ...argh, another kludge for compatibility. Save on funcs/relogic though:
-            int receiverGateIndex = (gazumptionGateIndices[i] + 2) % 4;
+                // In order to correct the gate for gazumpee's flips, etc. we need to write the gate to the gazumpee
+                // Store the original gate first
+                struct gate innerGate = parcel->children[i].gates[0];
+                // Then clobber
+                // ...argh, another kludge for compatibility. Save on funcs/relogic though:
+                int receiverGateIndex = (gazumptionGateIndices[i] + 2) % 4;
 
-            setGate(parcel->children[i].gates, &(oldTransforms[i]), receiverGateIndex, &gazumpGate);
+                setGate(parcel->children[i].gates, &(oldTransforms[i]), receiverGateIndex, &gazumpGate);
 
-            
-            // Finally, realize the walkway and shield of the child
-            realizeWalkwayAndShield(map, &(parcel->children[i]), &innerGate, &(parcel->children[i].gates[0]));
+                
+                // Finally, realize the walkway and shield of the child
+                realizeWalkwayAndShield(map, &(parcel->children[i]), &innerGate, &(parcel->children[i].gates[0]));
+            }
         }
     }
     // After this loop is run, every child's gate zero has been gazumped.
@@ -604,10 +618,10 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             struct gridTransform sheathTransform = newGridTransform();
             sheathTransform.x = cursorX;
             sheathTransform.y = cursorY;
-            sheathTransform.z = child->transform.z;
             sheathTransform.width = colDims[x];
             sheathTransform.height = rowDims[y];
             gTInherit(&(parcel->transform), &sheathTransform);
+            sheathTransform.z = child->transform.z; // Bad assumptions about relative heights carried over from v2
 
             // Another kludge deriving from our stubbornness: we have to correct the rotation of the child's gates here too.
             // Oh, well. Anything's cheaper than ECP.

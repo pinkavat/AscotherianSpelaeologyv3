@@ -66,7 +66,7 @@ static void mazeStampCallback(void *context, int x, int y, int m, int n){
     struct mazeStampCallbackContext *contextPtr = (struct mazeStampCallbackContext *)context;
 
     // Copy cell
-    struct ascoCell wallCell = {TILE_BLOCKAGE, 0, 0, 0};
+    struct ascoCell wallCell = {TILE_ROCK_SMALL, 0, 0, 0};
     struct ascoCell floorCell = {TILE_BLANK, 0, 0, 0};
 
     mapCell(contextPtr->map, m, n) = contextPtr->maze[y * contextPtr->width + x] ? wallCell : floorCell;
@@ -75,7 +75,7 @@ static void mazeStampCallback(void *context, int x, int y, int m, int n){
 
 void DFSMazeRealizer(void *context, struct parcel *parcel){
     // Cast context
-    struct ascoTileMap *map = (struct ascoTileMap *)context;
+    struct ascoTileMap *map = ((struct ascoGenContext *)context)->map;
 
     // Determine how large the maze core will be (the maze core MUST be of odd size)
     int coreWidth = parcel->transform.width - (parcel->parameters.pathWidth);
