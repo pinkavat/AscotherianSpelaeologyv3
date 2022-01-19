@@ -32,6 +32,8 @@
 
 #include "parcelGenerators/voidBubble.h"
 
+#include "parcelGenerators/door.h"
+
 #include "parcelGenerators/DFSMaze.h"
 
 #include "parcelGenerators/lockSmash.h"

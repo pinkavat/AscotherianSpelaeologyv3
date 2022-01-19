@@ -126,9 +126,14 @@ void cliffOozeStep(struct ascoTileMap *map){
                     clobbering = 1;
                 }
 
+                // ...and, like all "instinctual fixes", it's more complex than it first appears.
                 if(aMS == 10 || cMS == 5) continue;
                 if(clobbering && x < map->width - 2){
-                    if( !( TILE_OOZEABLE(mapCell(map, x+2, y).tile) && TILE_OOZEABLE(mapCell(map, x+2, y+1).tile) ) ) continue;
+                    struct ascoCell *e = &(mapCell(map, x+2, y));
+                    struct ascoCell *f = &(mapCell(map, x+2, y+1));
+                    if( !( TILE_OOZEABLE(e->tile) && TILE_OOZEABLE(f->tile) && b->z == e->z && b->z == f->z) ) continue;
+                    if((MSFromVariantRotation[e->variant][e->rotation] | 1) == 5) continue;
+                    if((MSFromVariantRotation[f->variant][f->rotation] | 8) == 10) continue;  // Check to see if raising would cause yet another saddle
                 }
 
                 // Adjust the cells accordingly
@@ -165,5 +170,7 @@ void tempPostProcess(struct ascoTileMap *map){
     thinFillingStep(map);
 
     // 2) Cliff oozing
-    for(int i = 0; i < 5; i++) cliffOozeStep(map);  // TODO run as many times as the map is deep (or some fraction thereof?)
+    for(int i = 0; i < 5; i++){
+        cliffOozeStep(map);  // TODO run as many times as the map is deep (or some fraction thereof?)
+    }
 }

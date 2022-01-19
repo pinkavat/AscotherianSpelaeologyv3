@@ -18,7 +18,7 @@
 
 // Cairo renderer
 // Compile with -I/opt/local/include/cairo -L/opt/local/lib -lcairo -lm -std=c11 cairoRenderer/cairoRenderWithID.c
-//#include "cairoRenderer/cairoRenderWithID.h"
+#include "cairoRenderer/cairoRenderWithID.h"
 
 
 int main(int argc, char **argv){
@@ -29,15 +29,14 @@ int main(int argc, char **argv){
 
      
     // 1) Sample grid signature
-    
+   
+    /* 
     enum parcelShapes shapes[4] = {L_SHAPE, L_SHAPE, L_SHAPE, L_SHAPE};
     unsigned int rotations[4] = {3, 0, 2, 1};
     //unsigned int rotations[4] = {1, 2, 0, 3};
     unsigned int flipHs[4] = {0, 0, 0, 0};
     unsigned int flipVs[4] = {0, 0, 0, 0};
     int pathGroups[4] = {1, 1, 1, 1};
-    int gateSourceIndices[4] = {0, 0, 0, 0};
-    int gateIsFork[4] = {0, 0, 0, 0};
     
     //cellPopulatorFunctionPtr popFuncs[4] = {&selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator};
     //cellPopulatorFunctionPtr popFuncs[4] = {&baseCaseIdeator, &baseCaseIdeator, &baseCaseIdeator, &baseCaseIdeator};
@@ -56,12 +55,40 @@ int main(int argc, char **argv){
         {0, 0, 0, 0},
         {0, 0, 0, 0}
     };
+    */
+
+    // 1) Another sample grid signature
+    enum parcelShapes shapes[9] = {V_SHAPE, E_SHAPE, V_SHAPE, V_SHAPE, L_SHAPE, L_SHAPE, E_SHAPE, I_SHAPE, L_SHAPE};
+    unsigned int rotations[9] = {0, 3, 0,   0, 2, 1,    2, 0, 2};
+    unsigned int flipHs[9] =    {0, 0, 0,   0, 0, 1,    0, 0, 1};
+    unsigned int flipVs[9] =    {0, 0, 0,   0, 0, 0,    0, 0, 0};
+    int pathGroups[9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
+    cellPopulatorFunctionPtr popFuncs[9] = {
+                                            &voidBubbleIdeator, &doorIdeator, &voidBubbleIdeator, 
+                                            &voidBubbleIdeator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator,
+                                            &doorIdeator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator
+                                            };
+    
+    struct recursorGridSignature gridSig = {
+        3, 3,
+        shapes,
+        popFuncs,
+        rotations,
+        flipHs,
+        flipVs,
+        pathGroups,
+        1,
+        0,
+        {0, 0, 0, 0},
+        {0, 0, 0, 0}
+    };
+
     
     
 
     // 2) Run grid ideator on new parcel
     struct parcel jimmy;
-    jimmy.shape = L_SHAPE;
+    jimmy.shape = V_SHAPE;
     jimmy.parameters.recursionDepth = 0;
     jimmy.parameters.pathWidth = 1;
     jimmy.parameters.gateWidth = 2;
@@ -76,11 +103,12 @@ int main(int argc, char **argv){
     // 3) Set target dimensions
     jimmy.transform.width = jimmy.minWidth * 1;
     jimmy.transform.height = jimmy.minHeight * 1;
-    jimmy.transform.x = 1;  // Sheath outer comp.
-    jimmy.transform.y = 1;
+    jimmy.transform.x = 2;  // Sheath outer comp.
+    jimmy.transform.y = 2;
+    jimmy.transform.z = -1; // Sheath comp.
 
     // 4) Prep a blank map
-    struct ascoTileMap *map = newAscoTileMap(gTAbsWidth(&(jimmy.transform)) + 2, gTAbsHeight(&(jimmy.transform)) + 2);
+    struct ascoTileMap *map = newAscoTileMap(gTAbsWidth(&(jimmy.transform)) + 4, gTAbsHeight(&(jimmy.transform)) + 4);
     // (set with unknowns to check, as void is hard to see)
     /*
     for(int y = 0; y < map->height; y++){
@@ -93,18 +121,20 @@ int main(int argc, char **argv){
 
     struct ascoGenContext context = {map};
 
-    // 5) Realize parcel into map
-    jimmy.realizer(&context, &jimmy);
-
-    // 6) Handle residuals
-    realizeWalkwayAndShield(map, &jimmy, &(jimmy.gates[0]), &(jimmy.gates[0]));
-
-    // 7) Sheath entire map (NOT appropriate to use a parcel func to do this...)
+    // 5) Sheath entire map (NOT appropriate to use a parcel func to do this...)
     struct ascoCell borderCell = {TILE_CLIFF, 0, 0, 0};
     struct gridTransform t = newGridTransform();
     t.width = map->width;
     t.height = map->height;
-    fillRectAuto(map, &borderCell, &t, 0, 0, map->width, map->height, 0); 
+    fillRectAuto(map, &borderCell, &t, 0, 0, map->width, map->height, 0);
+    borderCell.z--;
+    fillRectAuto(map, &borderCell, &t, 1, 1, map->width - 2, map->height - 2, 0); 
+
+    // 6) Realize parcel into map
+    jimmy.realizer(&context, &jimmy);
+
+    // 7) Handle residuals
+    realizeWalkwayAndShield(map, &jimmy, &(jimmy.gates[0]), &(jimmy.gates[0]));
 
     // TODO temp preprint
     //printAscoTileMap(map);
@@ -114,7 +144,7 @@ int main(int argc, char **argv){
     
     // 9) Print/Render
     printAscoTileMap(map);
-    //cairoRenderMap(map);
+    cairoRenderMap(map);
 
     // 10) Clean up
     freeAscoTileMap(map);

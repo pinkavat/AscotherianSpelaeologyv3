@@ -141,6 +141,11 @@ static const char * const stairGraphics[4] = {
     "^=", "]]", "=v", "[["
 };
 
+static const char * const doorGraphics[4] = {
+    "D^", "D>", "Dv", "<D"
+};
+
+
 void printAscoTileMap(struct ascoTileMap *map){
     for(int y = 0; y < map->height; y++){
         for(int x = 0; x < map->width; x++){
@@ -151,6 +156,9 @@ void printAscoTileMap(struct ascoTileMap *map){
             if(cell.tile == TILE_STAIR){
                 // Stairs get special graphics
                 printf("%s\e[0m", stairGraphics[cell.rotation]);
+            } else if(cell.tile == TILE_DOOR){
+                // Doors get special graphics
+                printf("%s\e[0m", doorGraphics[cell.rotation]);
             } else if(ascoTiles[cell.tile].tilingType == ASCO_TILING_MS && cell.variant > 0){
                 // MS-tile border
                 printf("%s\e[0m", MSGraphics[cell.variant - 1][cell.rotation]);

@@ -202,9 +202,9 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
         //parcel->children[i].transform.z = (i % 3) - 1;   // TODO HEIGHT SELECTOR
         //parcel->children[i].transform.z = 0;   // TODO HEIGHT SELECTOR
         if(parcel->parameters.recursionDepth == 0){
-            parcel->children[i].transform.z = -1;
+            parcel->children[i].transform.z = 0;
         } else {
-            parcel->children[i].transform.z = 1;
+            parcel->children[i].transform.z = -1;
         }
     }
 
@@ -225,7 +225,7 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
             if(x > 0 && !otherHasGate(child->shape, &(child->transform), 0)) topoAdj[3] = 0;   // Left gate
 
             // Recursor walkway clash preventor
-            if(x == 0 && !otherHasGate(child->shape, &(child->transform), 0)) topoAdj[3] = 0;
+            if(x == 0 && !otherHasGate(child->shape, &(child->transform), 0) && parcel->shape != V_SHAPE) topoAdj[3] = 0;
 
             // L-case inelegant solution (TODO improve)
             // Only works for gate 1 for now, not gate 3
@@ -256,7 +256,7 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
     computeMinDimsAndFlexScores(parcel->children, dataStruct->sheathes, minColDims, minRowDims, xFlexes, yFlexes, signature->width, signature->height);
 
     // 8) Establish overall minimum dimensions and flex scores
-    parcel->minWidth = WALKWAY_WIDTH;    // Initially add walkway width
+    parcel->minWidth = (parcel->shape == V_SHAPE) ? 0 : WALKWAY_WIDTH;    // Initially add walkway width if non-V
     for(int i = 0; i < signature->width; i++) parcel->minWidth += minColDims[i];
     parcel->minHeight = 0;
     for(int i = 0; i < signature->height; i++) parcel->minHeight += minRowDims[i];
@@ -469,10 +469,13 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     // of the source rects, in order to place the gates correctly. We're going to piggyback the gazumper on this data also.
     struct gridTransform oldTransforms[signature->width * signature->height];
 
+    // If the recursor is V-shaped, no walkway is present:
+    int walkwayWidth = (parcel->shape == V_SHAPE) ? 0 : WALKWAY_WIDTH;
+
 
     // 3) Distribute dimensional increases across individual child parcels
     // 4) ...and translate children while we have a loop open for old time's sake
-    int translationCursorX = WALKWAY_WIDTH; // offset for self's walkway
+    int translationCursorX = walkwayWidth; // offset for self's walkway
     int translationCursorY = 0;
     // 5) ...and realize the child parcels as well, come to think of it
     for(int y = 0; y < signature->height; y++){
@@ -560,7 +563,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
         }
 
         // Reset "translation cursor" to first column and move down a row
-        translationCursorX = WALKWAY_WIDTH; // offset for self's walkway
+        translationCursorX = walkwayWidth; // offset for self's walkway
         translationCursorY += rowDims[y];
     }
 
@@ -607,7 +610,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
 
     
     // 7) Realize sheathes
-    int cursorX = WALKWAY_WIDTH;    // offset for self's walkway
+    int cursorX = walkwayWidth;    // offset for self's walkway
     int cursorY = 0;
     for(int y = 0; y < signature->height; y++){
         for(int x = 0; x < signature->width; x++){
@@ -643,7 +646,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
         }
 
         // Reset cursor to first column and move down a row
-        cursorX = WALKWAY_WIDTH;    // offset for self's walkway
+        cursorX = walkwayWidth;    // offset for self's walkway
         cursorY += rowDims[y];
     }
 
@@ -653,7 +656,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     // 8) Generate my own residuals
 
     // Set walkway
-    parcel->walkwayWidth = WALKWAY_WIDTH; 
+    parcel->walkwayWidth = walkwayWidth; 
 
     // Set shield (no shield should exist in a grid recursor at all)
     parcel->shieldHeight = 0;
