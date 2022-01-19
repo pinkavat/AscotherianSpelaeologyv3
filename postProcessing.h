@@ -2,6 +2,7 @@
 #define POSTPROCESSING
 
 #include "ascotherianTileMap.h"
+#include "coordQueue.h"
 
 /* postProcessing.h
 *

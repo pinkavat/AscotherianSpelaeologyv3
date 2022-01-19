@@ -5,6 +5,55 @@
 
 
 
+// THINFILLING STEP
+// TODO document better
+// TODO migrate to own file?
+// TODO FOLD TRAVERSAL INTO OTHER LOGICS AS WELL
+// Traverses entire map: unresolveds surrounded on three sides become blockage and floodfill outward
+void thinFillingStep(struct ascoTileMap *map){
+    // Set up a coord queue
+    struct coordQueue *queue = newCoordQueue(32);    // TODO initial size...?
+
+    for(int y = 0; y < map->height - 1; y++){
+        for(int x = 0; x < map->width - 1; x++){
+            if(mapCell(map, x, y).tile == TILE_UNRESOLVED){
+
+                // Begin tentative floodfill
+                enCoordQueue(queue, x, y);
+
+                int m, n;
+                while(deCoordQueue(queue, &m, &n)){
+                    // Check if cell m, n is bordered on more than three sides by Cliffs or Blockages
+                    uint8_t topTile   = (n > 0)              ? mapCell(map, m, n-1).tile : TILE_VOID;
+                    uint8_t rightTile = (m < map->width - 1) ? mapCell(map, m+1, n).tile : TILE_VOID;
+                    uint8_t bottomTile= (n < map->height -1) ? mapCell(map, m, n+1).tile : TILE_VOID;
+                    uint8_t leftTile  = (m > 0)              ? mapCell(map, m-1, n).tile : TILE_VOID;
+                    
+                    int sides = 0;
+                    if(topTile == TILE_CLIFF || topTile == TILE_BLOCKAGE) sides++;
+                    if(rightTile == TILE_CLIFF || rightTile == TILE_BLOCKAGE) sides++;
+                    if(bottomTile == TILE_CLIFF || bottomTile == TILE_BLOCKAGE) sides++;
+                    if(leftTile == TILE_CLIFF || leftTile == TILE_BLOCKAGE) sides++;
+
+                    if(sides > 2){
+                        // So: collapse to blockage and enqueue unresolved neighbors
+                        mapCell(map, m, n).tile = TILE_BLOCKAGE;
+                        if(topTile == TILE_UNRESOLVED) enCoordQueue(queue, m, n-1);
+                        if(rightTile == TILE_UNRESOLVED) enCoordQueue(queue, m+1, n);
+                        if(bottomTile == TILE_UNRESOLVED) enCoordQueue(queue, m, n+1);
+                        if(leftTile == TILE_UNRESOLVED) enCoordQueue(queue, m-1, n);
+                    }
+                }
+            }
+        }
+    }
+
+    freeCoordQueue(queue);
+}
+
+
+
+
 // CLIFF OOZE STEPS
 // TODO migrate to own file
 
@@ -33,7 +82,6 @@ static const uint8_t rotationFromMS[16] = {
 // Helper macro for tile id wrangling in cliffOozeStep below
 #define TILE_OOZEABLE(t) ((t) == TILE_CLIFF || (t) == TILE_BLOCKAGE)
 
-#include <stdio.h>  // TODO debug
 
 // Cliff ooze step: TODO better doc
 // Traverses entire map: cliffs that are same height and facing each other rise to same level.
@@ -68,8 +116,20 @@ void cliffOozeStep(struct ascoTileMap *map){
 
                 // If this results in an illegal "saddle" configuration, lift the next corner over as well
                 // (TODO: we haven't really thought this out, this is just an instinctual fix to a found bug)
-                if(bMS == 5) bMS = 7;
-                if(dMS == 10) dMS = 14;
+                int clobbering = 0;
+                if(bMS == 5){
+                    bMS = 7;
+                    clobbering = 1;
+                }
+                if(dMS == 10){
+                    dMS = 14;
+                    clobbering = 1;
+                }
+
+                if(aMS == 10 || cMS == 5) continue;
+                if(clobbering && x < map->width - 2){
+                    if( !( TILE_OOZEABLE(mapCell(map, x+2, y).tile) && TILE_OOZEABLE(mapCell(map, x+2, y+1).tile) ) ) continue;
+                }
 
                 // Adjust the cells accordingly
                 struct ascoCell *cells[4] = {a, b, c, d};
@@ -89,52 +149,6 @@ void cliffOozeStep(struct ascoTileMap *map){
                     }
                 }
 
-                /*
-
-                if(aMS == 15){
-                    a->tile = TILE_BLOCKAGE;
-                    a->rotation = 0;
-                    a->variant = 0;
-                    a->z++;
-                } else {
-                    a->tile = TILE_CLIFF;
-                    a->variant = variantFromMS[aMS] % 4;    // TODO remove safety system
-                    a->rotation = rotationFromMS[aMS] % 4;
-                }
-
-                if(bMS == 15){
-                    b->tile = TILE_BLOCKAGE;
-                    b->rotation = 0;
-                    b->variant = 0;
-                    b->z++;
-                } else {
-                    b->tile = TILE_CLIFF;
-                    b->variant = variantFromMS[bMS] % 4;    // TODO remove safety system
-                    b->rotation = rotationFromMS[bMS] % 4;
-                }
-
-                if(cMS == 15){
-                    c->tile = TILE_BLOCKAGE;
-                    c->rotation = 0;
-                    c->variant = 0;
-                    c->z++;
-                } else {
-                    c->tile = TILE_CLIFF;
-                    c->variant = variantFromMS[cMS] % 4;    // TODO remove safety system
-                    c->rotation = rotationFromMS[cMS] % 4;
-                }
-
-                if(dMS == 15){
-                    d->tile = TILE_BLOCKAGE;
-                    d->rotation = 0;
-                    d->variant = 0;
-                    d->z++;
-                } else {
-                    d->tile = TILE_CLIFF;
-                    d->variant = variantFromMS[dMS] % 4;    // TODO remove safety system
-                    d->rotation = rotationFromMS[dMS] % 4;
-                }
-                */
             }
 
 
@@ -147,6 +161,9 @@ void cliffOozeStep(struct ascoTileMap *map){
 
 
 void tempPostProcess(struct ascoTileMap *map){
-    for(int i = 0; i < 5; i++) cliffOozeStep(map);
+    // 1) Thinfilling step
+    thinFillingStep(map);
 
+    // 2) Cliff oozing
+    for(int i = 0; i < 5; i++) cliffOozeStep(map);  // TODO run as many times as the map is deep (or some fraction thereof?)
 }

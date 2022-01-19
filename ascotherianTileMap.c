@@ -24,6 +24,8 @@ struct ascoTile ascoTiles[] = {
     {"Tile_Rock_Tall",  "/\\",PRINT_COLOUR_ROCK,        ASCO_TILING_NONE},
     {"Tile_Rock_Large", "!!", PRINT_COLOUR_ROCK,        ASCO_TILING_LARGE},
 
+    {"Tile_Door",       "Do", "\e[1m\e[38;5;154m",      ASCO_TILING_MS},    // Technically MS to match cliffs (but not really, right? like stairs)
+    {"Tile_Ladder",     "HH", "\e[1m\e[38;5;154m",      ASCO_TILING_NONE},
 
     {"Tile_Rock_Smash",     "{}", "\e[1m\e[38;5;184m",  ASCO_TILING_NONE},
     {"Tile_Rock_Strength",  "()",",\e[1m\e[38;5;250m",  ASCO_TILING_NONE},

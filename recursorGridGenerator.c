@@ -157,7 +157,6 @@ static void heightAdjHelper(struct parcel *children, int x, int y, int width, in
 
 
 
-
 // ==================== IDEATOR ====================
 
 void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *signature){
@@ -235,7 +234,7 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
             if((getGateIndex(&(child->transform), 2, &throwaway) == 1) && selfHasGate(child->shape, 1)) topoAdj[1] = 0;
             if((getGateIndex(&(child->transform), 1, &throwaway) == 1) && selfHasGate(child->shape, 1)) topoAdj[2] = 0;
             if((getGateIndex(&(child->transform), 0, &throwaway) == 1) && selfHasGate(child->shape, 1)) topoAdj[3] = 0;
-           
+        
 
             // Compute height-adj with a helper
             int heightAdj[9];
@@ -244,6 +243,7 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
 
             // Hand data off to the sheath solver
             computeSheathData(&(dataStruct->sheathes[curIndex]), topoAdj, heightAdj);
+
         }
     }
 
@@ -312,15 +312,16 @@ enum sheathCornerTypes self, enum sheathEdgeTypes left, enum sheathEdgeTypes rig
     // Otherwise corner is drawn
     struct ascoCell cornerCell = {TILE_BLOCKAGE, 0, cornerRotation, 0};
     if((left < SHEATH_EDGE_UP) && (right < SHEATH_EDGE_UP)){
+        // Edges exist and are not cliffs
         if(self == SHEATH_CORNER_BLOCKAGE){
             // Corner is a blockage
             cornerCell.rotation = 0;
         } else {
-            // Corner is concave from below
+            // Corner is concave from below or convex from above, as per the self's height
             cornerCell.tile = TILE_CLIFF;
-            cornerCell.variant = 3;
-            // Inherits rotation
-            cornerCell.z = -1;
+            cornerCell.variant = (self == SHEATH_CORNER_DOWN) ? 3 : 2;
+            cornerCell.rotation = (cornerCell.rotation + ((self == SHEATH_CORNER_DOWN) ? 0 : 2)) % 4;
+            cornerCell.z = (self == SHEATH_CORNER_DOWN) ? -1 : 0;
         }
     } else if (left == SHEATH_EDGE_DOWN && right == SHEATH_EDGE_DOWN){
         // Convex down case
@@ -434,7 +435,7 @@ static void realizeSheath(struct ascoTileMap *map, struct gridTransform *t, stru
 
 
 
-
+#include <stdio.h>  // TODO debug
 
 // ==================== REALIZER ====================
 
@@ -486,7 +487,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             if(child->shape != V_SHAPE){
                 // Otherwise, store its neighbor's index and appropriate gate for gazumption
                 unsigned int rotation = child->transform.rotation;
-                const unsigned int rotFlipLookup[4] = {2, 1, 0, 3}; // Another bloody kludge
+                const unsigned int rotFlipLookup[4] = {2, 3, 0, 1}; // Another bloody kludge
                 if(child->transform.flipH) rotation = rotFlipLookup[rotation];
                 switch(rotation){
                     case 0: // Gazump from the left

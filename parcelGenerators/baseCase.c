@@ -59,13 +59,13 @@ void baseCaseRealizer(void *context, struct parcel *parcel){
     }
 
     // Set gates
-    parcel->gates[0].position = parcel->transform.height - 3;
+    parcel->gates[0].position = parcel->transform.height - (parcel->parameters.gateWidth + 1);
     parcel->gates[0].size = selfHasGate(parcel->shape, 0) ? parcel->parameters.gateWidth : 0;
-    parcel->gates[1].position = parcel->transform.width - 3;
+    parcel->gates[1].position = parcel->transform.width - (parcel->parameters.gateWidth + 1);
     parcel->gates[1].size = selfHasGate(parcel->shape, 1) ? parcel->parameters.gateWidth : 0;
-    parcel->gates[2].position = parcel->transform.height - 3;
+    parcel->gates[2].position = parcel->transform.height - (parcel->parameters.gateWidth + 1);
     parcel->gates[2].size = selfHasGate(parcel->shape, 2) ? parcel->parameters.gateWidth : 0;
-    parcel->gates[3].position = parcel->transform.width - 3;
+    parcel->gates[3].position = parcel->transform.width - (parcel->parameters.gateWidth + 1);
     parcel->gates[3].size = selfHasGate(parcel->shape, 3) ? parcel->parameters.gateWidth : 0;
 
 }

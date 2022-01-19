@@ -6,17 +6,16 @@
         1) Grid Transform autoparent adjust thingy is buggy; transforming, interpreting, transforming, then interpreting again yields bad results.
             adjusting params of gT triggering a re-inherit MIGHT fix problem; or might exacerbate. Needs thinking. As stands, works, but fragile.
         2) We still don't have a satisfactory answer for that Jan 11 "Mystery Stochastic Segfault".
-        3) TOPOLOGICAL ADJACENCY BADNESS
-        4) Minor graphical bugs in the cairo renderer: when a concave corner joins a convex one directly there's a strip of beige where none should be
+        3) Minor graphical bugs in the cairo renderer: when a concave corner joins a convex one directly there's a strip of beige where none should be
+        4) Likewise, when the same occurs inversely the concave corner clobbers the convex one
 
     FEATURE / IMPROVEMENT LIST
         1) Flip option for mapHelper autotile
         2) "waterworld" grid recursor kitbash
-            --> Likewise, Iceworld (eats a grid signature, places multiple ice puzzles connected together)
+            --> Likewise, Iceworld (eats a grid signature, places multiple ice puzzles connected together, without bothering with sheathing)
         3) Some sort of error handler (mostly to deal with malformed signatures (or we could sidestep them with a later "signature validity checker"))
-        4) Same-same corner culling for sheathes
-        5) Add "expansion direction" back in, for picking where to add lengthening parcels?
-        6) Add isolation floodfill to the DFS maze generator
+        4) Add "expansion direction" back in, for picking where to add lengthening parcels?
+        5) Add isolation floodfill to the DFS maze generator
 
 
     WILD FUTURE OPTIMIZATION LIST
@@ -1088,5 +1087,37 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
 
     MASSIVE STONKING SUCCESS with void-handling in the postprocessor step. It all just works, like a dream.
     No need to have a specialized void realizer now, really. Remove and fold into base-case??
+
+    Next thinks: further postprocessing.
+        Try:
+            1) Add more blockage (1-wide collapse / random rock add step)
+            2) Run the multipass oozer
+            3) Undo oozing (uphill rocks become downhill rocks and cliffs)
+            4) Clever blockage resolution (with anti-walkway rule)
+            5) Final pass checks blockage connectivity to floor (peripheral data stored in its variant/rot field w/queued pass, reset in cleaning pass)
+                All remaining blockages resolve to rock (small/tall based on something...)
+                Rocks/Cliffs splattered into large rocks if necessary.
+                V1 has a rule (I think) where 3 out of 4 blockages cause a fourth to be placed in the remaining square (if OK)
+
+===============================================================================
+    Jan 19
+
+    Thought of a couple edge cases of the oozer that produce illegal saddle configs. Will fix.
+
+    Also thought of something: If the generator knows that its void can't reach the top, should it mark said void as something else???
+    Hm. This seems like a future refinement; the oozer works so well......
+
+    To do today:
+        1) Fix oozer edge cases -- DONE (I think)
+        2) Fix topo-adj problem -- DONE (solved instead by doing the flat-edge sheath culling)
+        3) Implement Blockage 1-wide receder (Import coordqueue) -- DONE
+        4) Implement door E-units and test
+        5) Implement Ridgebreaker
+
+    HAD A THOUGHT CONCERNING PARAMETER DIVISION, and it's pretty important.
+    Up till now we've been assuming that we can provide a grid signature as the initial condition. Bears the question -- provide it to what? If we hand it off to a
+    grid solver, that solver is designed to divide ONE PARAMETER SET among its members. We need a way to start the system off with PARAMETERS DESTINED FOR EACH UNIT
+    somehow....... Hm. Major oversight. Glad we didn't get to far into parameter work already.
+
 
 ===============================================================================

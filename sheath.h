@@ -38,8 +38,8 @@ enum sheathEdgeTypes {
 
 enum sheathCornerTypes{
     SHEATH_CORNER_BLOCKAGE, // As above, but note that corners are either blocked or height-changing.
-    SHEATH_CORNER_CHANGE    // Improvement from v2: corners are either blocked, pruned, or matching their adjacent edges
-                            // and if there are no edges to match, it MUST be concave down, since zero-height parcels are definitionally unsheathed.
+    SHEATH_CORNER_DOWN,     // Corner is down (either concave from VN neighbors or convex from the self)
+    SHEATH_CORNER_UP        // Corner is up (either concave from self or convex from VN neighbors)
 };
 
 

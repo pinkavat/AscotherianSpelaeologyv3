@@ -36,15 +36,27 @@ void computeSheathData(struct sheathData *sheath, int topoAdj[4], int heightAdj[
     if(heightAdj[8] != 0){
         // Check corner heights; any corner not of the same height is marked for height-change and causes its
         //    two adjacent edges to be uncullable
-        // TODO WAIT; this logic is wrong. Consider flat corners, they place no burden on their edges.
-        // Maybe this: if the corner's height is the same as either one but not both of its edge neighbors, it's ok to cull.
-        // FUTURE OPTIMIZATION; for now, we can fail to cull these and waste a bit of space.
-        for(int i = 0; i < 4; i++){
-            if(heightAdj[2 * i] != heightAdj[8]){
-                sheath->corners[i] = SHEATH_CORNER_CHANGE;
-                canCullEdge[i == 0 ? 3 : (i - 1)] = 0;
-                canCullEdge[i] = 0;
-            }
+
+        // Juuuust enough modulo footling to avoid putting this all in a loop (compiler'd unroll it anyway)
+        if(heightAdj[0] != heightAdj[8] && heightAdj[7] == heightAdj[1]){
+            sheath->corners[0] = (heightAdj[8] < 0) ? SHEATH_CORNER_UP : SHEATH_CORNER_DOWN;
+            canCullEdge[3] = 0;
+            canCullEdge[0] = 0;
+        }
+        if(heightAdj[2] != heightAdj[8] && heightAdj[1] == heightAdj[3]){
+            sheath->corners[1] = (heightAdj[8] < 0) ? SHEATH_CORNER_UP : SHEATH_CORNER_DOWN;
+            canCullEdge[0] = 0;
+            canCullEdge[1] = 0;
+        }
+        if(heightAdj[4] != heightAdj[8] && heightAdj[3] == heightAdj[5]){
+            sheath->corners[2] = (heightAdj[8] < 0) ? SHEATH_CORNER_UP : SHEATH_CORNER_DOWN;
+            canCullEdge[1] = 0;
+            canCullEdge[2] = 0;
+        }
+        if(heightAdj[6] != heightAdj[8] && heightAdj[5] == heightAdj[7]){
+            sheath->corners[3] = (heightAdj[8] < 0) ? SHEATH_CORNER_UP : SHEATH_CORNER_DOWN;
+            canCullEdge[2] = 0;
+            canCullEdge[3] = 0;
         }
     }
 

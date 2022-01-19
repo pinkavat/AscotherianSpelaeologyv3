@@ -105,6 +105,9 @@ int main(int argc, char **argv){
     t.width = map->width;
     t.height = map->height;
     fillRectAuto(map, &borderCell, &t, 0, 0, map->width, map->height, 0); 
+
+    // TODO temp preprint
+    //printAscoTileMap(map);
  
     // 8) Post-process
     tempPostProcess(map);

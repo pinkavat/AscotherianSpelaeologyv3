@@ -12,7 +12,11 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
         //testLakeIdeator(parcel);
         //baseCaseIdeator(parcel);
         //lockSmashIdeator(parcel);
-        DFSMazeIdeator(parcel);
+        if(rand() % 2) {
+            DFSMazeIdeator(parcel);
+        } else {
+            testLakeIdeator(parcel);
+        }
     } else {
         // Recurse with grid
         // Sample grid signature from above
