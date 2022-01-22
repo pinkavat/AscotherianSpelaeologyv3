@@ -6,8 +6,6 @@
         1) Grid Transform autoparent adjust thingy is buggy; transforming, interpreting, transforming, then interpreting again yields bad results.
             adjusting params of gT triggering a re-inherit MIGHT fix problem; or might exacerbate. Needs thinking. As stands, works, but fragile.
         2) We still don't have a satisfactory answer for that Jan 11 "Mystery Stochastic Segfault".
-        3) Minor graphical bugs in the cairo renderer: when a concave corner joins a convex one directly there's a strip of beige where none should be
-        4) Likewise, when the same occurs inversely the concave corner clobbers the convex one
 
     FEATURE / IMPROVEMENT LIST
         1) Flip option for mapHelper autotile
@@ -38,6 +36,7 @@
         5) Think about an L-sys Blockage increaser pass (i.e. an UNRESOLVED surrounded on three sides by BLOCKAGE becomes itself BLOCKAGE, enqueues neighbors, etc.)
 
     ASSUMPTIONS TO ADD TO THE DOCS:
+        0) The whole T-shape entry kerfuffle of Jan 21 needs a mention (in terms of "entering" a parcel)
         1) Parcels always possess a tile on either side of their gate that doesn't contain the gate, to avoid the corner-clash sheath problem.
         2) All gates are present in the parcel (assumption from sheather). If a parcel doesn't use a gate it sets its size to zero.
         3) As it stands there's probably an implicit upper limit on gate width ("4" or something, and that would lead to weirdness)
@@ -46,8 +45,8 @@
             may yield odd/incorrect behaviour.
         NOTES FOR HEIGHT SELECTOR:
             1) Water is always the same height intraparcel (-1 presumably?)
-            2) Void is always 0.
-            3) Recursors are always 0 or -1 (if they're going to contain valid void...?)
+            2) Void is always 0. (UNDER RECONSIDERATION)
+            3) Recursors are always 0 or -1 (if they're going to contain valid void...?) (UNDER RECONSIDERATION)
 
 
 
@@ -1100,7 +1099,7 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
                 V1 has a rule (I think) where 3 out of 4 blockages cause a fourth to be placed in the remaining square (if OK)
 
 ===============================================================================
-    Jan 19
+    Jan 19: Oozefixing
 
     Thought of a couple edge cases of the oozer that produce illegal saddle configs. Will fix.
 
@@ -1108,16 +1107,107 @@ Tomorrow: populate parcelGenerators subdirectory with some simple testable gener
     Hm. This seems like a future refinement; the oozer works so well......
 
     To do today:
-        1) Fix oozer edge cases -- DONE (I think)
+        1) Fix oozer edge cases -- DONE (I think) (I was wrong, but got some more. Keep eyes out.)
         2) Fix topo-adj problem -- DONE (solved instead by doing the flat-edge sheath culling)
         3) Implement Blockage 1-wide receder (Import coordqueue) -- DONE
-        4) Implement door E-units and test
-        5) Implement Ridgebreaker
+        4) Implement door E-units and test -- DONE (plus or minus some assumptions)
+        5) Implement Ridgebreaker (Not done; but perhaps not necessary?)
+    We really do need to fix the cairo graphical bugs.
 
     HAD A THOUGHT CONCERNING PARAMETER DIVISION, and it's pretty important.
     Up till now we've been assuming that we can provide a grid signature as the initial condition. Bears the question -- provide it to what? If we hand it off to a
     grid solver, that solver is designed to divide ONE PARAMETER SET among its members. We need a way to start the system off with PARAMETERS DESTINED FOR EACH UNIT
     somehow....... Hm. Major oversight. Glad we didn't get to far into parameter work already.
+    HERE'S AN IDEA: DIVIDING THE PARAMETERS IS NO LONGER THE RESPONSIBILITY OF THE RECURSOR; IT'S THE SELECTOR'S RESPONSIBILITY.
+    That is, parameters are passed as part of the grid signature (?????).
+    Hm. Needs more thought.
+    HERE'S A NOTEWORTHY NOTE: PATHS are what the context cares about, not individual parcels. So, the grid signature contains some paths, and parameters are given
+    based on each path. Dividing metrics among the paths (parallel division) is the responsibility of the selector, while dividing them serially among path members
+    (and perhaps finalizing...?) is the responsibility of the recursor.
+    THIS BREAKS DOWN A BIT IF WE CONSIDER THAT THE RECURSOR IS ITSELF A PARCEL, and therefore receives a parameter set.
+    DON'T MIX OUR METAPHORS. 1 PARAMETER == 1 PARCEL.
 
+    Another interesting sidework would be representing grid patterns as a STRING, then having a translation faculty.
+    After all, we want to provide a simple interface to the generator, right?
+    Also note that if we want these strings to be TOTAL, the generator must be seeded with an accompanying seed.
+
+    Showed it to Dad, he thinks we should show it off online.
+
+    Fixed the cairo cliff bugs last thing.
+
+
+===============================================================================
+    January 21: Back on the whole parameter thingy
+
+    Thought up an inelegant solution to the grid recursor param clash.
+    The Recursor is given a param array as a third parameter.
+    In selector calls, this is always null, and is an instruction to the recursor to divide its own parameter among its children using the grid signature as a guide.
+    In a supercall, it is a list of parameters, which the recursor assigns to each child serially, ignoring its own parameter and not performing division.
+    There are a couple of hitches that need a bit more thought:
+        1) Void bubbles need no parameters, and are present often in the initial signature. How do we describe in array? Ignored Filler struct?
+        2) Before we were reasoning about PATHs as opposed to individual parcels. Would it be better to provide PATH PARAMETERS and still perform some division
+            automatically?
+            (probably overblown; initial grid sigs are by nature small...? But we're doing it for subunits...? It's ONLY for forks. It's an OVERENGINEERED FEATURE.)
+        3) How can we streamline parameter input representation the most?
+    WE NEED TO REMOVE THE IDEA OF PATHS. IT'S OVERENGINEERED.
+    The paths only mean something in the case of FORK RECURSORS. In Flange recursors, they don't mean enough.
+    We *could* just pretend that flange recursors don't exist.
+    Also, Fork recursors only branch out to two -- any more and we get there by a second recursion step. The second branch of a fork is also pretty much invariably
+    a shortcut. We could make that a true assumption.
+    SO -- instead of ""Paths"" we now have a single flag as part of the signature: whether the parcel is a shortcut or not.
+    This is allowed by the assumption that THERE CAN ONLY EVER BE ONE SHORTCUT PARCEL IN A FORK.
+    This is TRUE. Forks can only meaningfully exist in L- or I-cases; in either case, there's only one shortcut parcel (inner L or top/bottom I).
+
+    Another consideration about the nature of parameters themselves that we haven't considered is RELATIVE FREQUENCY OF FEATURE. As it stands, the generator is
+    not given HOW OFTEN an optional type should appear; only that it can/can't appear. 
+    PERHAPS THINKING ABOUT REL-FREQ is OVERENGINEERING.
+    After all, in our source material, precious few caves have more than two optional base cases.
+    The selector can reason about recursors on its own.
+    This way we can use bitmasks to identify optional content.
+    Which clashes with the use of a list for the mandatory content. *sigh* It's such a damn good idea though!
+
+    We're going to take a break and work on some more base cases.
+    Just discovered the juicy idea of Ledge T-shapes, where the ledge places in the flange part. Is this the *only* case in which a ledge need appear....?
+    (No; higher order thinking may allow "ledge cycles" and other i-case stuff)
+    Even better: is this the only case for a T-shape that's not base-case?
+    
+    WHOA: MAJOR MAJOR OVERSIGHT. UNBELIEVABLY HUGE MISTAKE. If the recursor grid topology loops, then some branches of T- or X- parcels MUST BE ENTRANCES.
+    AND AN ENTRANCE MEANS GAZUMPTION.
+    We can paper this over with a couple of assumptions and a kludge, but it's still a whopping great hole in our thinking.
+    The way it currently stands, there are TWO THINGS that have branches as entrances: Bridges and Ledges.
+    Of those two, Ledges are the only ones that can be reasonably modelled as parcels (and the kludge below ought to work for bridges too, if we choose "bad modelling")
+    If we assume:
+        a) In T-shaped ledges, the ledge construct is always placed entering from the branch
+        b) The height of a ledge parcel is always zero
+    Then:
+        a) The ledge will have no sheath, and therefore no weird gate
+        b) A parcelwide landing strip contacts the gate from the adjacent parcel, and on its other side, the ledge runs all the way along. Looks fine, doesn't trigger
+            the CA problem from before.
+        c) We can then chain ledges together until we touch the I/L shaped main path.
+    BRIEF GRAPHING SHOWS TI-LEDGE NONFUNCTIONAL due to collision with the main walkway.
+    THIS IS TERRIBLE.
+
+    We can't let this kill the project. Brainstorm a solution.
+        1) Swap idea for ledge from T-entrance to L-exit; make so the only T-parcel is a topologically contiguous lump of floor (that way, walkway collisions don't matter)
+        2) Only use ledges on the edges of recursors, then clobber the T-gate so it doesn't touch (we can totally do that!); use the recursor's walkway instead.
+    NOTE: due to the CA optimization, the WALKWAY DRAWING UNIT needs a notion of whether there's a landing strip coming in from below/above.
+    There are TWO USE CASES for ledge loops:
+        1) Autogenous arising to add a short way from exit to entrance (Uses a TL Entry ledge for I-case, and an L Ledge with 2 TI blanks for L-case)
+        2) Goof-based (either mandatory or incidental) backloop, where L-case is fine (Uses a TL entry ledge and a TL blank, and places the goof in a goof L)
+            but I-case necessitates the Goof and the Ledge being placed in the same unit (Assuming a single parcel for the puzzle).
+            Here's the thing: That's a good idea. The puzzle will take up a fair bit of space, so adding the ledge to the goof unit means the goof unit can fill the
+            space itself, using the ledge.
+    So we actually need:
+        1) TL Entry ledge
+        2) L Ledge with or without goof on the entry side
+        3) Blank TL exits/entries (Base case with a modification to the walkway drawing logic such that the lowest strip is all TILE_BLANK)
+        WALKWAY CAN DETECT THE NEED FOR THIS SANS FLAGS; it just checks to see if the core tile adjacent to the bottom right of itself is TILE_BLANK. 
+
+    Hm. There's also a ramification for the metric divider here. If the selector decides to make a ledge loop in case of mandatory goof (does this actually happen?)
+        Then the goof is always placed by the ledge, and the puzzle next to it.
+   
+
+    Wrote the ledge base case; seems to work (haven't tested it in a recursor yet -- MS 4 and 5 giving me trouble)
+    NEXT STEP: add WALKWAY TI DETECTOR. 
 
 ===============================================================================

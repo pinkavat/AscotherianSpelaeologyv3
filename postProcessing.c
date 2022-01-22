@@ -163,6 +163,71 @@ void cliffOozeStep(struct ascoTileMap *map){
 
 
 
+#define TILE_MAKES_INACCESSIBLE(t) ((t) == TILE_CLIFF || (t) == TILE_BLOCKAGE)
+
+
+// TODO own file
+// TODO better doc
+// TODO fold into other map passes (cheaper)
+// Passes over the map, turning inaccessible blockages into inaccessible floors
+// NOTE: clobbers the blockage's variant field (safe?) as opposed to an auxiliary datastruct
+void inaccessibleCliffStep(struct ascoTileMap *map){
+    
+    // First pass: flag all "connected" blockages
+
+    // Set up a coord queue
+    struct coordQueue *queue = newCoordQueue(32);    // TODO initial size...?
+
+    for(int y = 0; y < map->height - 1; y++){
+        for(int x = 0; x < map->width - 1; x++){
+            struct ascoCell *cell = &(mapCell(map, x, y));
+            if(cell->tile == TILE_BLOCKAGE && cell->variant == 0){
+                // Check cell's neighbors to see if any aren't blockage or cliff
+                if(
+                    (y > 0 && !TILE_MAKES_INACCESSIBLE(mapCell(map, x, y-1).tile)) ||
+                    (x < map->width - 1 && !TILE_MAKES_INACCESSIBLE(mapCell(map, x+1, y).tile)) ||
+                    (y < map->height - 1 && !TILE_MAKES_INACCESSIBLE(mapCell(map, x, y+1).tile)) ||
+                    (x > 0 && !TILE_MAKES_INACCESSIBLE(mapCell(map, x-1, y).tile))
+                ){
+                    // If so, floodfill out from this tile, marking all adjacent blockages as connected (by setting their variant fields to 1)
+                    enCoordQueue(queue, x, y); 
+
+                    // TODO: this traversal logic is shared with other floodfills; is there some easy helper refactoring?
+                    int m, n;
+                    while(deCoordQueue(queue, &m, &n)){
+                        // 1) Set self to variant 1
+                        mapCell(map, m, n).variant = 1;
+                        
+                        // 2) Enqueue all variant-0 blockage neighbors
+                        if(n > 0 && mapCell(map, m, n-1).tile == TILE_BLOCKAGE && mapCell(map, m, n-1).variant == 0) enCoordQueue(queue, m, n-1);
+                        if(m < map->width-1 && mapCell(map, m+1, n).tile == TILE_BLOCKAGE && mapCell(map, m+1, n).variant == 0) enCoordQueue(queue, m+1, n);
+                        if(n < map->height-1 && mapCell(map, m, n+1).tile == TILE_BLOCKAGE && mapCell(map, m, n+1).variant == 0) enCoordQueue(queue, m, n+1);
+                        if(m > 0 && mapCell(map, m-1, n).tile == TILE_BLOCKAGE && mapCell(map, m-1, n).variant == 0) enCoordQueue(queue, m-1, n);
+                    }
+
+                }
+
+            }
+        }
+    }
+
+    // Second pass: replace all unconnected blockages with blank cliff
+    // TODO is it cheaper to enqueue rather than flag and secondpass? Is it safer?
+    for(int y = 0; y < map->height - 1; y++){
+        for(int x = 0; x < map->width - 1; x++){
+            struct ascoCell *cell = &(mapCell(map, x, y));
+            if(cell->tile == TILE_BLOCKAGE){
+                if(cell->variant == 1){
+                    cell->variant = 0;   // Reset variant
+                } else {
+                    cell->tile = TILE_CLIFF;
+                }                
+            }
+        }
+    }
+}
+
+
 
 
 void tempPostProcess(struct ascoTileMap *map){
@@ -173,4 +238,7 @@ void tempPostProcess(struct ascoTileMap *map){
     for(int i = 0; i < 5; i++){
         cliffOozeStep(map);  // TODO run as many times as the map is deep (or some fraction thereof?)
     }
+
+    // 3) Flatten blockages atop cliffs to inaccessible cliff
+    inaccessibleCliffStep(map);
 }

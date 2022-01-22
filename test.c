@@ -57,6 +57,7 @@ int main(int argc, char **argv){
     };
     */
 
+
     // 1) Another sample grid signature
     enum parcelShapes shapes[9] = {V_SHAPE, E_SHAPE, V_SHAPE, V_SHAPE, L_SHAPE, L_SHAPE, E_SHAPE, I_SHAPE, L_SHAPE};
     unsigned int rotations[9] = {0, 3, 0,   0, 2, 1,    2, 0, 2};
@@ -99,13 +100,13 @@ int main(int argc, char **argv){
 
     //printf("Ideated! %d, %d\n%f, %f\n", jimmy.minWidth, jimmy.minHeight, jimmy.flexX, jimmy.flexY);
 
-
     // 3) Set target dimensions
     jimmy.transform.width = jimmy.minWidth * 1;
     jimmy.transform.height = jimmy.minHeight * 1;
     jimmy.transform.x = 2;  // Sheath outer comp.
     jimmy.transform.y = 2;
     jimmy.transform.z = -1; // Sheath comp.
+
 
     // 4) Prep a blank map
     struct ascoTileMap *map = newAscoTileMap(gTAbsWidth(&(jimmy.transform)) + 4, gTAbsHeight(&(jimmy.transform)) + 4);

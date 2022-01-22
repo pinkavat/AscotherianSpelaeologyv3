@@ -90,14 +90,14 @@ static const int tileSetData[][7] = {
     {48, 68, 16, 12,   0, 0, 0},     // 51: Bottom Ledge (basic)
     { 0, 68, 16, 12,   0, 0, 0},     // 52: Left Ledge (basic)
 
-    {32, 56, 16, 12,   0, 0, 0},      // 53: Top Left Edge
+    {32, 56, 16, 12,   0, 0, 0},      // 53: Top Left Edge (ledge parts)
     {48, 80, 16, 12,   0, 0, 0},      // 54: Top Right Edge
     {16, 56, 16, 12,   0, 0, 0},      // 55: Right Top Edge
     {16, 80, 16, 12,   0, 0, 0},      // 56: Right Bottom Edge
-    {32, 68, 16, 12,   0, 0, 0},      // 57: Bottom Left Edge
-    {32, 80, 16, 12,   0, 0, 0},      // 58: Bottom Right Edge
-    { 0, 56, 16, 12,   0, 0, 0},      // 59: Left Top Edge
-    { 0, 80, 16, 12,   0, 0, 0},      // 60: Left Bottom Edge
+    {32, 80, 16, 12,   0, 0, 0},      // 57: Bottom Right Edge
+    {32, 68, 16, 12,   0, 0, 0},      // 58: Bottom Left Edge
+    { 0, 80, 16, 12,   0, 0, 0},      // 59: Left Bottom Edge
+    { 0, 56, 16, 12,   0, 0, 0},      // 60: Left Top Edge
 
     {48,105, 16, 12,   0, 0, 0},      // 61: Bridge Hzont top   
     {48,117, 16, 12,   0, 0, 0},      // 62: Bridge Hzont mid
@@ -126,6 +126,11 @@ static int tileMapToImageData(struct ascoCell cell){
     if(cell.tile == TILE_CLIFF){
         if(cell.variant == 0) return 14;    // flat cliff doubles as inaccessible floor
         return 1 + ((cell.variant - 1) * 4) + cell.rotation;
+    }
+
+    if(cell.tile == TILE_LEDGE){
+        if(cell.variant == 1) return 49 + cell.rotation;
+        return 53 + (cell.rotation * 2 + (cell.variant - 4));   // TODO other forms of ledge
     }
 
     if(cell.tile == TILE_WATER){
@@ -253,8 +258,13 @@ void cairoRenderMap(struct ascoTileMap *map){
             }*/
 
             // Translate tile to Image tileset data
-            // OLD VERSION int tile = tileMapToImageData(map->cells[(y*map->width)+x].tile);
             int tile = tileMapToImageData(mapCell(map, x, y));
+            // Eliminate convex-concave smashing
+            if(mapCell(map, x, y).tile == TILE_CLIFF && y > 0 && mapCell(map, x, y).variant == 3 && mapCell(map, x, y-1).tile == TILE_CLIFF
+                && mapCell(map, x, y-1).variant == 2 && mapCell(map, x, y).z == mapCell(map, x, y-1).z){
+                tile = 1;
+            }
+
 
             if(tileSetData[tile][6] > 0){
                 // Tile needs another tile printed beneath

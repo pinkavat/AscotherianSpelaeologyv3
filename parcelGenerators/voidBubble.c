@@ -31,8 +31,8 @@ void voidBubbleRealizer(void *context, struct parcel *parcel){
     // Cast context
     struct ascoTileMap *map = ((struct ascoGenContext *)context)->map;
 
-    // Fill with inaccessible floor (as we now solve void with the postprocessor)
-    struct ascoCell inaccessibleCell = {TILE_CLIFF, 0, 0, 0};
+    // Fill with blockage (as we now solve void with the postprocessor)
+    struct ascoCell inaccessibleCell = {TILE_BLOCKAGE, 0, 0, 0};
     fillRect(map, &inaccessibleCell, &(parcel->transform), 0, 0, parcel->transform.width, parcel->transform.height);
 
     // Blank out gates and size buffers, as expected:

@@ -53,7 +53,7 @@ void doorRealizer(void *context, struct parcel *parcel){
 
     // Place door
     // TODO a cheeky little trick; place the door out-of-bounds, assuming safe wrapper of the map in cliffs
-    struct ascoCell doorCell = {TILE_DOOR, 1, 3, 0};    // Facing towards entry gate. HMM. We have to set variant because it thinks it's MS-tiling.... we need a new type.
+    struct ascoCell doorCell = {TILE_DOOR, 0, 3, 0};    // Facing towards entry gate
     placeCell(map, &doorCell, &(parcel->transform), parcel->transform.width, doorPosition); 
 
 

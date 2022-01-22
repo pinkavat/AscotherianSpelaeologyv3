@@ -296,8 +296,8 @@ const struct ascoCell edgeLookup[4] = {
 const struct ascoCell gateLookup[4] = {
     {TILE_BLANK, 0, 0, 0},      // Blockage
     {TILE_BLANK, 0, 0, 0},      // Flat
-    {TILE_STAIR, 1, 2, 0},      // Up
-    {TILE_STAIR, 1, 0, -1}      // Down
+    {TILE_STAIR, 0, 2, 0},      // Up
+    {TILE_STAIR, 0, 0, -1}      // Down
 };
 
 

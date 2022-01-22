@@ -62,7 +62,8 @@ void fillRect(struct ascoTileMap *map, struct ascoCell *cell, struct gridTransfo
 void fillRectAuto(struct ascoTileMap *map, struct ascoCell *cell, struct gridTransform *t, int a, int b, int w, int h, unsigned int fillCore){
     switch(ascoTiles[cell->tile].tilingType){
         case ASCO_TILING_NONE:
-            // Nontiling tiles don't react to smart autofilling: fill as normal
+        case ASCO_TILING_ROTOR:
+            // Nontiling tiles and rotors don't react to smart autofilling: fill as normal
             fillRect(map, cell, t, a, b, w, h);
         break;
 
@@ -100,7 +101,32 @@ void fillRectAuto(struct ascoTileMap *map, struct ascoCell *cell, struct gridTra
         break;
 
         case ASCO_TILING_LARGE:
-            // TODO
+            // TODO either look up the dimensions (WHERE?) or react with error
+            // If lookup, leaves unanswered what to do if region is nonmultiple 
         break; 
     }
+}
+
+
+
+
+
+void drawLedge(struct ascoTileMap *map, struct gridTransform *t, int a, int b, int w, int h, int direction){
+    // TODO quick-and-dirty approach: there's probably a better one.
+    // 1) Construct a grid transform from the target region
+    struct gridTransform g = newGridTransform();
+    g.x = a;
+    g.y = b;
+    g.width = (direction & 1) ? h : w;
+    g.height = (direction & 1) ? w : h;
+    g.rotation = direction;
+    gTInherit(t, &g);
+    
+    // 2) Write the ledge to the constructed grid transform
+    struct ascoCell ledgeCell = {TILE_LEDGE, 1, 0, 0};
+    fillRect(map, &ledgeCell, &g, 0, 0, g.width, g.height);
+    ledgeCell.variant = 4;
+    placeCell(map, &ledgeCell, &g, 0, 0);
+    ledgeCell.variant = 5;
+    placeCell(map, &ledgeCell, &g, g.width - 1, 0);
 }

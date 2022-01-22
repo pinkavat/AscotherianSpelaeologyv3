@@ -15,8 +15,8 @@ struct ascoTile ascoTiles[] = {
     {"Tile_Blank",      "  ", "",                       ASCO_TILING_NONE},
 
     {"Tile_Cliff",      "██", PRINT_COLOUR_ROCK,        ASCO_TILING_MS},
-    {"Tile_Stair",      "!!", "\e[1m\e[38;5;7m",        ASCO_TILING_MS},
-    {"Tile_Ledge",      "!!", "\e[1m\e[38;5;7m",        ASCO_TILING_MS},    // TODO
+    {"Tile_Stair",      "!!", "\e[1m\e[38;5;7m",        ASCO_TILING_ROTOR},
+    {"Tile_Ledge",      "!!", "\e[1m\e[38;5;7m",        ASCO_TILING_MS},
 
     {"Tile_Water",      "~~", PRINT_COLOUR_WATER,       ASCO_TILING_MS},
 
@@ -24,7 +24,7 @@ struct ascoTile ascoTiles[] = {
     {"Tile_Rock_Tall",  "/\\",PRINT_COLOUR_ROCK,        ASCO_TILING_NONE},
     {"Tile_Rock_Large", "!!", PRINT_COLOUR_ROCK,        ASCO_TILING_LARGE},
 
-    {"Tile_Door",       "Do", "\e[1m\e[38;5;154m",      ASCO_TILING_MS},    // Technically MS to match cliffs (but not really, right? like stairs)
+    {"Tile_Door",       "Do", "\e[1m\e[38;5;154m",      ASCO_TILING_ROTOR},
     {"Tile_Ladder",     "HH", "\e[1m\e[38;5;154m",      ASCO_TILING_NONE},
 
     {"Tile_Rock_Smash",     "{}", "\e[1m\e[38;5;184m",  ASCO_TILING_NONE},
@@ -79,6 +79,13 @@ void rotateCell(struct ascoCell *cell, unsigned int rotation, unsigned int flipH
             // Nontiling tiles don't react to being rotated or flipped
         break;
 
+        case ASCO_TILING_ROTOR:
+            // Rotors react to flipping as a form of rotation but no more, akin to MS-straight
+            if(flipH) cell->rotation = flipHelper(cell->rotation, 3);
+            if(flipV) cell->rotation = flipHelper(cell->rotation, 1);
+            cell->rotation = (cell->rotation + rotation) % 4;
+        break;
+
         case ASCO_TILING_MS:
             switch(cell->variant){
                 case 0:
@@ -98,10 +105,17 @@ void rotateCell(struct ascoCell *cell, unsigned int rotation, unsigned int flipH
                     cell->rotation = (cell->rotation + rotation) % 4;
                 break;
                 case 4:
-                    // TODO LH Terminus
-                break;
                 case 5:
-                    // TODO RH Terminus
+                    // LH and RH Terminii
+                    if(flipH){
+                        cell->rotation ^= (cell->rotation & 1) ? 2 : 0;
+                        cell->variant = (cell->variant == 4) ? 5 : 4;
+                    }
+                    if(flipV){
+                        cell->rotation ^= (cell->rotation & 1) ? 0 : 2;
+                        cell->variant = (cell->variant == 4) ? 5 : 4;
+                    }
+                    cell->rotation = (cell->rotation + rotation) % 4;
                 break;
             }
         break;
@@ -130,11 +144,12 @@ void rotateCell(struct ascoCell *cell, unsigned int rotation, unsigned int flipH
 #define PRINT_COLOUR_BACKGROUND_1 "\e[48;5;238m"
 #define PRINT_COLOUR_BACKGROUND_2 "\e[48;5;237m"
 
-static const char * const MSGraphics[3][4] = {
+static const char * const MSGraphics[5][4] = {
     {"▄▄","█ ","▀▀"," █"},
     {"▄ ","▀ "," ▀"," ▄"},
-    {"█▄","█▀","▀█","▄█"}
-
+    {"█▄","█▀","▀█","▄█"},
+    {"^▄","_>","▀v","<-"},
+    {"▄^","->","v▀","<_"}
 };
 
 static const char * const stairGraphics[4] = {

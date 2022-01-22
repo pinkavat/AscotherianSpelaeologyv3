@@ -32,6 +32,9 @@ void fillRect(struct ascoTileMap *map, struct ascoCell *cell, struct gridTransfo
 void fillRectAuto(struct ascoTileMap *map, struct ascoCell *cell, struct gridTransform *t, int a, int b, int w, int h, unsigned int fillCore);
 
 
-// TODO ledge/stair deployer (direction-sensitive terminated rect handler)
+// Draws a ledge on the given map, transformed by the given transform.
+// The ledge will be drawn within the rectangle given by (a, b, w, h), facing the direction given (up clockwise).
+// TODO: currently one dimension must be one, and the other at least two. What to do in other cases? intelligent failsafe needed.
+void drawLedge(struct ascoTileMap *map, struct gridTransform *t, int a, int b, int w, int h, int direction);
 
 #endif
