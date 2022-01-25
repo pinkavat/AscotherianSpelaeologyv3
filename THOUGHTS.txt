@@ -325,7 +325,13 @@
         FLANGE REWARD   -- TODO
         PRESET          -- See input list for parameters to copy
         TERMINAL        -- Parameters mostly irrelevant; this is a known base case.
-    
+   
+
+    This seems OK. Moving ahead, here are the concrete implementation steps:
+        1) Independent recursor type selector  (Done)
+        2) Handcode grid signatures for each pattern
+        3) Obligate list system
+        4) Parameter divider thereupon based
         
 
 

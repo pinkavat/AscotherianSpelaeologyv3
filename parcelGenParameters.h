@@ -1,6 +1,8 @@
 #ifndef PARCEL_GEN_PARAMETERS
 #define PARCEL_GEN_PARAMETERS
 
+#include "recursorPatternSelector.h"
+
 /* parcelGenParameters.h
 *
 *   Defines generation parameters handed down through the recursion process of AscoSpel generation;
@@ -15,17 +17,13 @@
 
 struct parcelGenParameters {
 
-    unsigned int recursionDepth;    // The number of recursive steps taken to arrive at this point
+    unsigned int recursionDepth;                            // The number of recursive steps taken to arrive at this point
 
-    int gateWidth;                  // The width of gates generated in this parcel
-    int pathWidth;                  // The width of walkway paths generated in this parcel
+    int gateWidth;                                          // The width of gates generated in this parcel
+    int pathWidth;                                          // The width of walkway paths generated in this parcel
  
-    // TODO something better than "challenge rating" ("type theory"?)
-    // TODO reward notation
-    // TODO lock bitsets
-
-    // TODO global params stored / accessed from here (cave biome/type, prevailing mechanic, etc. All later, for the selector's use)
-
+    struct patternProbabilityTable *patternProbabilities;   // Pointer to the probability table used by the selector to decide which recursive pattern
+                                                            // to use for this parcel, if any.
 };
 
 #endif

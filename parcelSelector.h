@@ -3,6 +3,8 @@
 
 #include "parcel.h"
 #include "parcelGenParameters.h"
+#include "recursorPatternSelector.h"
+
 #include "parcelGenerators.h"
 #include "recursorGridGenerator.h"
 

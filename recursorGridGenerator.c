@@ -36,10 +36,6 @@ static struct recursorGridSignature *copyGridSignature(struct recursorGridSignat
     signatureCopy->flipHs = memdup(signature->flipHs, numCells * sizeof(unsigned int)); 
     signatureCopy->flipVs = memdup(signature->flipVs, numCells * sizeof(unsigned int)); 
     
-    // TODO LEGACY REMOVE signatureCopy->pathGroups = memdup(signature->pathGroups, numCells * sizeof(int));
-    //signatureCopy->numCritPaths = signature->numCritPaths;
-    //signatureCopy->numShortcutPaths = signature->numShortcutPaths; 
-
     memcpy(signatureCopy->gateSourceIndices, signature->gateSourceIndices, 4 * sizeof(int));
     memcpy(signatureCopy->gateIsFork, signature->gateIsFork, 4 * sizeof(int));
 
@@ -55,7 +51,6 @@ static void freeGridSignatureCopy(struct recursorGridSignature *signature){
     free(signature->rotations);
     free(signature->flipHs);
     free(signature->flipVs);
-    // TODO LEGACY REMOVE free(signature->pathGroups);
 
     free(signature);
 }
@@ -181,7 +176,7 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
     parcel->children = (void *)malloc(sizeof(struct parcel) * parcel->childCount);
 
     // 3) Divide up child parameters
-    // TODO LEGACY REMOVE divideParametersByGrid(&(parcel->parameters), signature, parcel->children);
+    divideParametersByGrid(&(parcel->parameters), signature, parcel->children);
 
     // 4) Set child shapes; generate children
     // 5) ...and transform children in same loop
@@ -189,10 +184,6 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
 
         // Set child shape
         parcel->children[i].shape = signature->shapes[i];
-
-        // TODO temp set child parameters
-        parcel->children[i].parameters = parcel->parameters;
-        parcel->children[i].parameters.recursionDepth++;
 
         // Ideate child
         (*(signature->populatorFunctions[i]))(&(parcel->children[i]));

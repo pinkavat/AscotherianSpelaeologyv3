@@ -3,7 +3,12 @@
 // parcelSelector.c
 // See header for details
 
+
 void selectAndApplyParcelGenerator(struct parcel *parcel){
+
+    // TODO sanity check
+    //printf("Selecting at level %d; chose %d\n", parcel->parameters.recursionDepth, selectPattern(parcel->parameters.patternProbabilities, parcel->parameters.recursionDepth));
+
 
     if(parcel->parameters.recursionDepth >= 2 || parcel->shape != L_SHAPE){
         // Base out

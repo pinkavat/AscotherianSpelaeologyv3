@@ -27,6 +27,24 @@ int main(int argc, char **argv){
     fprintf(stderr, "\e[1mSeed: %d\e[0m\n", seed);
     srand(seed);
 
+
+
+
+    // 0) Pattern prob table
+    #define TABLE_LENGTH 3
+    int tableWeights [TABLE_LENGTH][NUM_PATTERN_TYPES] = {
+        //Term  Length   Void    Fork   SLedge  Pledge  Fflange Rflange  Bridge 
+        {   0,      0,      0,      0,      0,      0,      0,      0,      0},
+        {   0,      1,      1,      0,      0,      0,      0,      0,      0},
+        {   0,      0,      1,      2,      0,      0,      0,      0,      0}
+    };
+    struct patternProbabilityTable probTable = {
+        tableWeights,
+        TABLE_LENGTH
+    };
+
+
+
      
     // 1) Sample grid signature
    
@@ -94,6 +112,7 @@ int main(int argc, char **argv){
     jimmy.parameters.recursionDepth = 0;
     jimmy.parameters.pathWidth = 1;
     jimmy.parameters.gateWidth = 2;
+    jimmy.parameters.patternProbabilities = &probTable;
 
     recursorGridIdeator(&jimmy, &gridSig);
     //selectAndApplyParcelGenerator(&jimmy);
