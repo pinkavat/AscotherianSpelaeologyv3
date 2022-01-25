@@ -8,6 +8,7 @@
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
+
 void ledgeIdeator(struct parcel *parcel){
 
     // Ignore shape and parameters completely
@@ -22,7 +23,7 @@ void ledgeIdeator(struct parcel *parcel){
     parcel->minWidth = (parcel->shape == TL_SHAPE) ? (parcel->parameters.gateWidth + parcel->parameters.pathWidth + LEDGE_BLOCK_MIN_HEIGHT) :
                         ((parcel->shape == I_SHAPE) ? (parcel->parameters.pathWidth + LEDGE_BLOCK_MIN_HEIGHT) : 
                         max(parcel->parameters.pathWidth + 1 + LEDGE_BLOCK_MIN_WIDTH, parcel->parameters.gateWidth));  // All other cases malformed
-    parcel->minHeight = (parcel->shape == L_SHAPE) ? (1 + max(LEDGE_BLOCK_MIN_HEIGHT, parcel->parameters.gateWidth)) : (
+    parcel->minHeight = (parcel->shape == L_SHAPE) ? (1 + max(LEDGE_BLOCK_MIN_HEIGHT, parcel->parameters.gateWidth + 2)) : (
                         (parcel->shape == TI_SHAPE) ? (parcel->parameters.gateWidth + 1 + LEDGE_BLOCK_MIN_HEIGHT) : max(parcel->parameters.gateWidth + 2,
                         LEDGE_BLOCK_MIN_WIDTH));    // All other cases malformed
 
@@ -37,12 +38,14 @@ void ledgeIdeator(struct parcel *parcel){
 
 
 
+
 // Draws the "ledge core" of a ledge parcel. The core is a group of one or more ledges enforcing travel from the top of the core to the bottom.
 // TODO make more interesting
 static void drawLedgeBlock(struct ascoTileMap *map, struct gridTransform *t){
     // Blank out floor
     struct ascoCell blankFloorCell = {TILE_BLANK, 4, 2, 0};
     fillRect(map, &blankFloorCell, t, 0, 0, t->width, t->height);
+
 
     // Every other row, draw a ledge
     for(int i = 1; i < t->height - 1; i+=2){
@@ -61,7 +64,7 @@ void ledgeRealizer(void *context, struct parcel *parcel){
     // Compute position of core ledge block
     int ledgeBlockX = (parcel->shape == TI_SHAPE || parcel->shape == L_SHAPE) ? parcel->walkwayWidth + 1 :
          (parcel->shape == TL_SHAPE) ? parcel->parameters.gateWidth + 1: parcel->walkwayWidth;
-    int ledgeBlockY = (parcel->shape == TI_SHAPE) ? parcel->parameters.gateWidth + 1 : ((parcel->shape == L_SHAPE) ? 1 : 0);
+    int ledgeBlockY = (parcel->shape == TI_SHAPE) ? parcel->parameters.gateWidth + 1 : ((parcel->shape == L_SHAPE) ? parcel->parameters.pathWidth + 1 : 0);
 
     // Draw core ledge block
     struct gridTransform ledgeBlockTransform = newGridTransform();
@@ -77,6 +80,7 @@ void ledgeRealizer(void *context, struct parcel *parcel){
         ledgeBlockTransform.height = parcel->transform.height - ledgeBlockY;
     }
 
+
     gTInherit(&(parcel->transform), &(ledgeBlockTransform));
     drawLedgeBlock(map, &ledgeBlockTransform);
 
@@ -88,7 +92,7 @@ void ledgeRealizer(void *context, struct parcel *parcel){
         //...and a walkway up top
         struct ascoCell walkwayCell = {TILE_BLANK, 0, 0, 0};
         fillRect(map, &walkwayCell, &(parcel->transform),
-            parcel->walkwayWidth, 0, parcel->transform.width - parcel->walkwayWidth, parcel->transform.height - gTAbsHeight(&ledgeBlockTransform));
+            parcel->walkwayWidth, 0, parcel->transform.width - parcel->walkwayWidth, ledgeBlockY);
     }
 
     // If TL, add a walkway to the left of the block

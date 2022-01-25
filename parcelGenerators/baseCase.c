@@ -51,7 +51,7 @@ void baseCaseRealizer(void *context, struct parcel *parcel){
             parcel->walkwayWidth = parcel->transform.width - coreWidth;
             parcel->shieldHeight = parcel->transform.height - coreHeight;
 
-            struct ascoCell blankFloorCell = {TILE_UNKNOWN, 0, 0, 0}; // TODO UNKNOWN FOR DEBUG
+            struct ascoCell blankFloorCell = {TILE_BLANK, 0, 0, 0};
             fillRect(map, &blankFloorCell, &(parcel->transform), parcel->walkwayWidth, parcel->shieldHeight, coreWidth, coreHeight); 
 
         }

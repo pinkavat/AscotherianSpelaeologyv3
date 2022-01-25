@@ -57,13 +57,13 @@ int main(int argc, char **argv){
     };
     */
 
-
     // 1) Another sample grid signature
     enum parcelShapes shapes[9] = {V_SHAPE, E_SHAPE, V_SHAPE, V_SHAPE, L_SHAPE, L_SHAPE, E_SHAPE, I_SHAPE, L_SHAPE};
     unsigned int rotations[9] = {0, 3, 0,   0, 2, 1,    2, 0, 2};
     unsigned int flipHs[9] =    {0, 0, 0,   0, 0, 1,    0, 0, 1};
     unsigned int flipVs[9] =    {0, 0, 0,   0, 0, 0,    0, 0, 0};
-    int pathGroups[9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
+    //int pathGroups[9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
+    enum parameterDivisionTypes divTypes[9] = {TERMINAL, TERMINAL, TERMINAL, TERMINAL, CRITICAL_PATH, CRITICAL_PATH, TERMINAL, CRITICAL_PATH, CRITICAL_PATH};
     cellPopulatorFunctionPtr popFuncs[9] = {
                                             &voidBubbleIdeator, &doorIdeator, &voidBubbleIdeator, 
                                             &voidBubbleIdeator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator,
@@ -77,13 +77,14 @@ int main(int argc, char **argv){
         rotations,
         flipHs,
         flipVs,
-        pathGroups,
-        1,
-        0,
+        divTypes,
+        //pathGroups,
+        //1,
+        //0,
         {0, 0, 0, 0},
         {0, 0, 0, 0}
     };
-
+    
     
     
 
@@ -98,6 +99,8 @@ int main(int argc, char **argv){
     //selectAndApplyParcelGenerator(&jimmy);
     //baseCaseIdeator(&jimmy);
 
+
+    
     //printf("Ideated! %d, %d\n%f, %f\n", jimmy.minWidth, jimmy.minHeight, jimmy.flexX, jimmy.flexY);
 
     // 3) Set target dimensions
