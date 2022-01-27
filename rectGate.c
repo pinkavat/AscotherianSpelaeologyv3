@@ -66,7 +66,8 @@ const int gatePossessionLookup[][4] = {
     {1, 0, 0, 0},   // E_SHAPE
     {1, 1, 0, 0},   // L_SHAPE
     {1, 0, 1, 0},   // I_SHAPE
-    {1, 1, 1, 0},   // TL_SHAPE
+    {1, 1, 1, 0},   // TLS_SHAPE
+    {1, 1, 0, 1},   // TLT_SHAPE
     {1, 1, 1, 0},   // TI_SHAPE
     {1, 1, 1, 1},   // XL_SHAPE
     {1, 1, 1, 1},   // XI_SHAPE

@@ -16,9 +16,17 @@ void realizeWalkwayAndShield(struct ascoTileMap *map, struct parcel *parcel, str
 
     // 2) Blank out the shield 
     struct ascoCell shieldCell = {TILE_BLOCKAGE, 0, 0, 0};
-    fillRect(map, &shieldCell, &(parcel->transform), parcel->walkwayWidth, 0, parcel->transform.width - parcel->walkwayWidth, parcel->shieldHeight); 
+    fillRect(map, &shieldCell, &(parcel->transform), parcel->walkwayWidth, 0, parcel->transform.width - parcel->walkwayWidth, parcel->shieldHeight);
 
-    // 3) Draw path through the walkway
+    // 3) If the parcel has gate 3, bore a path through the shield
+    if(selfHasGate(parcel->shape, 3)){
+        struct ascoCell pathCell = {TILE_BLANK, 0, 0, 0};
+        fillRect(map, &pathCell, &(parcel->transform), parcel->gates[3].position, 0, parcel->gates[3].size, parcel->shieldHeight);
+    }
+
+
+
+    // 4) Draw path through the walkway
     if(parcel->walkwayWidth > 0){
         // Determine where the path falls
         int pathX = 0, pathWidth = 0;

@@ -20,7 +20,7 @@ void ledgeIdeator(struct parcel *parcel){
     parcel->flexX = 0.3;    // TODO choose a good flex value for ledges (perhaps even dependent on block orientation??)
     parcel->flexY = 0.3;
 
-    parcel->minWidth = (parcel->shape == TL_SHAPE) ? (parcel->parameters.gateWidth + parcel->parameters.pathWidth + LEDGE_BLOCK_MIN_HEIGHT) :
+    parcel->minWidth = (parcel->shape == TLS_SHAPE) ? (parcel->parameters.gateWidth + parcel->parameters.pathWidth + LEDGE_BLOCK_MIN_HEIGHT) :
                         ((parcel->shape == I_SHAPE) ? (parcel->parameters.pathWidth + LEDGE_BLOCK_MIN_HEIGHT) : 
                         max(parcel->parameters.pathWidth + 1 + LEDGE_BLOCK_MIN_WIDTH, parcel->parameters.gateWidth));  // All other cases malformed
     parcel->minHeight = (parcel->shape == L_SHAPE) ? (1 + max(LEDGE_BLOCK_MIN_HEIGHT, parcel->parameters.gateWidth + 2)) : (
@@ -63,14 +63,14 @@ void ledgeRealizer(void *context, struct parcel *parcel){
 
     // Compute position of core ledge block
     int ledgeBlockX = (parcel->shape == TI_SHAPE || parcel->shape == L_SHAPE) ? parcel->walkwayWidth + 1 :
-         (parcel->shape == TL_SHAPE) ? parcel->parameters.gateWidth + 1: parcel->walkwayWidth;
+         (parcel->shape == TLS_SHAPE) ? parcel->parameters.gateWidth + 1: parcel->walkwayWidth;
     int ledgeBlockY = (parcel->shape == TI_SHAPE) ? parcel->parameters.gateWidth + 1 : ((parcel->shape == L_SHAPE) ? parcel->parameters.pathWidth + 1 : 0);
 
     // Draw core ledge block
     struct gridTransform ledgeBlockTransform = newGridTransform();
     ledgeBlockTransform.x = ledgeBlockX;
     ledgeBlockTransform.y = ledgeBlockY;
-    ledgeBlockTransform.rotation = (parcel->shape == TL_SHAPE) ? 1 : ((parcel->shape == I_SHAPE) ? 3 : 0);
+    ledgeBlockTransform.rotation = (parcel->shape == TLS_SHAPE) ? 1 : ((parcel->shape == I_SHAPE) ? 3 : 0);
 
     if(ledgeBlockTransform.rotation & 1){
         ledgeBlockTransform.height = parcel->transform.width - ledgeBlockX;
@@ -95,8 +95,8 @@ void ledgeRealizer(void *context, struct parcel *parcel){
             parcel->walkwayWidth, 0, parcel->transform.width - parcel->walkwayWidth, ledgeBlockY);
     }
 
-    // If TL, add a walkway to the left of the block
-    if(parcel->shape == TL_SHAPE){
+    // If TLS, add a walkway to the left of the block
+    if(parcel->shape == TLS_SHAPE){
         struct ascoCell walkwayCell = {TILE_BLANK, 0, 0, 0};
         fillRect(map, &walkwayCell, &(parcel->transform), parcel->walkwayWidth, 0, parcel->parameters.gateWidth, parcel->transform.height);
     }
@@ -106,7 +106,7 @@ void ledgeRealizer(void *context, struct parcel *parcel){
     parcel->gates[0].position = 1;
     parcel->gates[0].size = parcel->parameters.gateWidth;
 
-    parcel->gates[1].position = (parcel->shape == TL_SHAPE) ? 1 : ledgeBlockX;
+    parcel->gates[1].position = (parcel->shape == TLS_SHAPE) ? 1 : ledgeBlockX;
     parcel->gates[1].size = selfHasGate(parcel->shape, 1) ? parcel->parameters.gateWidth : 0;
 
     parcel->gates[2].position = 1;

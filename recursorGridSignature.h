@@ -59,6 +59,7 @@ struct recursorGridSignature {
                                                         // For now, default to zero if the grid doesn't possess such a gate; fail-bad but noncrashing.
 
     int gateIsFork[4];                                  // Array of booleans (size 4); Whether gate n is a fork (i.e. requires an extra walkway)
+        // TODO possibly redundant
 };
 
 #endif

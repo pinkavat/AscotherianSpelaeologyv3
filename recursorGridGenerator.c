@@ -21,7 +21,7 @@ static inline void *memdup(void *source, size_t size){
 
 
 // Copy a grid signature to the heap and return a pointer to it
-static struct recursorGridSignature *copyGridSignature(struct recursorGridSignature *signature){
+static struct recursorGridSignature *copyGridSignature(const struct recursorGridSignature *signature){
     struct recursorGridSignature *signatureCopy = (void *)malloc(sizeof(struct recursorGridSignature));
     
     signatureCopy->width = signature->width;
@@ -132,7 +132,7 @@ static void distributeDimensionalIncreases(int increase, int *dimensions, float 
 
 // Helper for the Helper for computing sheath data; fetches the z of the parcel at (x, y), or 0 if the requested index is out-of-bounds
 static int heightAdjHelperCore(struct parcel *children, int x, int y, int width, int height){
-    if(x < 0 || x >= width || y < 0 || y >= width) return 0;
+    if(x < 0 || x >= width || y < 0 || y >= height) return 0;
     return children[(y * width) + x].transform.z;
 }
 
@@ -154,7 +154,7 @@ static void heightAdjHelper(struct parcel *children, int x, int y, int width, in
 
 // ==================== IDEATOR ====================
 
-void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *signature){
+void recursorGridIdeator(struct parcel *parcel, const struct recursorGridSignature *signature){
 
     // Shape has no meaning as yet
     // Parameters mean nothing yet
@@ -235,7 +235,7 @@ void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *si
             int heightAdj[9];
             heightAdj[8] = child->transform.z;
             heightAdjHelper(parcel->children, x, y, signature->width, signature->height, heightAdj);
-
+           
             // Hand data off to the sheath solver
             computeSheathData(&(dataStruct->sheathes[curIndex]), topoAdj, heightAdj);
 

@@ -36,27 +36,16 @@ void baseCaseRealizer(void *context, struct parcel *parcel){
     struct ascoTileMap *map = ((struct ascoGenContext *)context)->map;
 
     // The base case must be able to handle all possible shapes
-    switch(parcel->shape){
-        case V_SHAPE:
-            // TODO ???
-        break;
-        case E_SHAPE: case L_SHAPE: case I_SHAPE:
-        case TL_SHAPE: case TI_SHAPE:
-        case XL_SHAPE: case XI_SHAPE:
-        {
+    int coreWidth = CORE_WIDTH + parcel->parameters.gateWidth;
+    int coreHeight = CORE_HEIGHT + parcel->parameters.gateWidth;
 
-            int coreWidth = CORE_WIDTH + parcel->parameters.gateWidth;
-            int coreHeight = CORE_HEIGHT + parcel->parameters.gateWidth;
+    parcel->walkwayWidth = parcel->transform.width - coreWidth;
+    parcel->shieldHeight = parcel->transform.height - coreHeight;
 
-            parcel->walkwayWidth = parcel->transform.width - coreWidth;
-            parcel->shieldHeight = parcel->transform.height - coreHeight;
+    struct ascoCell blankFloorCell = {TILE_BLANK, 0, 0, 0};
+    fillRect(map, &blankFloorCell, &(parcel->transform), parcel->walkwayWidth, parcel->shieldHeight, coreWidth, coreHeight); 
 
-            struct ascoCell blankFloorCell = {TILE_BLANK, 0, 0, 0};
-            fillRect(map, &blankFloorCell, &(parcel->transform), parcel->walkwayWidth, parcel->shieldHeight, coreWidth, coreHeight); 
 
-        }
-        break;
-    }
 
     // Set gates
     parcel->gates[0].position = parcel->transform.height - (parcel->parameters.gateWidth + 1);

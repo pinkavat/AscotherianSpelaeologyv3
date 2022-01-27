@@ -16,6 +16,6 @@
 // Divide the source parameters up among the indicated children, according to the provided grid signature.
 // Use case: to be invoked by the grid recursor.
 // TODO add inherited source param.
-void divideParametersByGrid(struct parcelGenParameters *sourceParameters, struct recursorGridSignature *signature, struct parcel *children);
+void divideParametersByGrid(struct parcelGenParameters *sourceParameters, const struct recursorGridSignature *signature, struct parcel *children);
 
 #endif

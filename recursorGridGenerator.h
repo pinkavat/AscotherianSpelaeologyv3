@@ -42,7 +42,7 @@ struct recursorGridDataStruct {
 
 // ==========   IDEATOR   ==========
 
-void recursorGridIdeator(struct parcel *parcel, struct recursorGridSignature *signature);
+void recursorGridIdeator(struct parcel *parcel, const struct recursorGridSignature *signature);
 
 // ==========   REALIZER  ==========
 

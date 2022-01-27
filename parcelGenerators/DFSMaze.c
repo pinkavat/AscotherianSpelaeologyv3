@@ -139,9 +139,12 @@ void DFSMazeRealizer(void *context, struct parcel *parcel){
         parcel->gates[2].size = 0;
     }
 
-
-    // TODO No holepunching for gate 3 as yet (gate 3 still up in air)
-    parcel->gates[3].position = parcel->transform.width - 3;
-    parcel->gates[3].size = parcel->shape > TI_SHAPE ? parcel->parameters.gateWidth : 0;
-    
+    parcel->gates[3].position = ((rand() % (coreWidth - parcel->parameters.gateWidth - 1)) | 1) + parcel->walkwayWidth;
+    if(selfHasGate(parcel->shape, 3)){
+        parcel->gates[1].size = parcel->parameters.gateWidth;
+        // Holepunch maze through to gate 1
+        fillRect(map, &blankFloorCell, &(parcel->transform), parcel->gates[3].position, 0, 1, parcel->shieldHeight + 1);
+    } else {
+        parcel->gates[3].size = 0;
+    }    
 }

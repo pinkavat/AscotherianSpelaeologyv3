@@ -32,26 +32,16 @@ void testLakeRealizer(void *context, struct parcel *parcel){
     // Cast context
     struct ascoTileMap *map = ((struct ascoGenContext *)context)->map;
 
-    // The base case must be able to handle all possible shapes
-    switch(parcel->shape){
-        case V_SHAPE:
-            // TODO ????? 
-        break;
-        case E_SHAPE: case L_SHAPE: case I_SHAPE:
-        case TL_SHAPE: case TI_SHAPE:
-        case XL_SHAPE: case XI_SHAPE:
-
-            parcel->walkwayWidth = 1;
-            parcel->shieldHeight = 0;
-        
-            // Draw lake core
-            struct ascoCell lakeCell = {TILE_WATER, 0, 0, 0};
-            fillRectAuto(map, &lakeCell, &(parcel->transform), 
-                parcel->walkwayWidth, 0, parcel->transform.width - parcel->walkwayWidth, parcel->transform.height, 1); 
 
 
-        break;
-    }
+    parcel->walkwayWidth = 1;
+    parcel->shieldHeight = 0;
+
+    // Draw lake core
+    struct ascoCell lakeCell = {TILE_WATER, 0, 0, 0};
+    fillRectAuto(map, &lakeCell, &(parcel->transform), 
+        parcel->walkwayWidth, 0, parcel->transform.width - parcel->walkwayWidth, parcel->transform.height, 1); 
+
 
     parcel->gates[0].position = parcel->transform.height - parcel->parameters.gateWidth - 1;
     parcel->gates[0].size = selfHasGate(parcel->shape, 0) ? parcel->parameters.gateWidth : 0;

@@ -35,8 +35,8 @@ int main(int argc, char **argv){
     int tableWeights [TABLE_LENGTH][NUM_PATTERN_TYPES] = {
         //Term  Length   Void    Fork   SLedge  Pledge  Fflange Rflange  Bridge 
         {   0,      0,      0,      0,      0,      0,      0,      0,      0},
-        {   0,      1,      1,      0,      0,      0,      0,      0,      0},
-        {   0,      0,      1,      2,      0,      0,      0,      0,      0}
+        {   0,      0,      0,      0,      1,      0,      0,      0,      0},
+        {   0,      0,      1,      0,      0,      0,      0,      0,      0}
     };
     struct patternProbabilityTable probTable = {
         tableWeights,
@@ -48,33 +48,7 @@ int main(int argc, char **argv){
      
     // 1) Sample grid signature
    
-    /* 
-    enum parcelShapes shapes[4] = {L_SHAPE, L_SHAPE, L_SHAPE, L_SHAPE};
-    unsigned int rotations[4] = {3, 0, 2, 1};
-    //unsigned int rotations[4] = {1, 2, 0, 3};
-    unsigned int flipHs[4] = {0, 0, 0, 0};
-    unsigned int flipVs[4] = {0, 0, 0, 0};
-    int pathGroups[4] = {1, 1, 1, 1};
-    
-    //cellPopulatorFunctionPtr popFuncs[4] = {&selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator};
-    //cellPopulatorFunctionPtr popFuncs[4] = {&baseCaseIdeator, &baseCaseIdeator, &baseCaseIdeator, &baseCaseIdeator};
-    cellPopulatorFunctionPtr popFuncs[4] = {&baseCaseIdeator, &selectAndApplyParcelGenerator, &baseCaseIdeator, &selectAndApplyParcelGenerator};
-    
-    struct recursorGridSignature gridSig = {
-        2, 2,
-        shapes,
-        popFuncs,
-        rotations,
-        flipHs,
-        flipVs,
-        pathGroups,
-        1,
-        0,
-        {0, 0, 0, 0},
-        {0, 0, 0, 0}
-    };
-    */
-
+    /*
     // 1) Another sample grid signature
     enum parcelShapes shapes[9] = {V_SHAPE, E_SHAPE, V_SHAPE, V_SHAPE, L_SHAPE, L_SHAPE, E_SHAPE, I_SHAPE, L_SHAPE};
     unsigned int rotations[9] = {0, 3, 0,   0, 2, 1,    2, 0, 2};
@@ -102,6 +76,27 @@ int main(int argc, char **argv){
         {0, 0, 0, 0},
         {0, 0, 0, 0}
     };
+    */
+
+    enum parcelShapes shapes[3] = {E_SHAPE, I_SHAPE, E_SHAPE};
+    unsigned int rotations[3] = {2, 0, 0};
+    unsigned int flipHs[3] =    {0, 0, 0};
+    unsigned int flipVs[3] =    {0, 0, 0};
+    enum parameterDivisionTypes divTypes[3] = {TERMINAL, CRITICAL_PATH, TERMINAL};
+    cellPopulatorFunctionPtr popFuncs[3] = {&doorIdeator, &selectAndApplyParcelGenerator, &doorIdeator};
+    
+    struct recursorGridSignature gridSig = {
+        3, 1,
+        shapes,
+        popFuncs,
+        rotations,
+        flipHs,
+        flipVs,
+        divTypes,
+        {0, 0, 0, 0},
+        {0, 0, 0, 0}
+    };
+
     
     
     
@@ -123,8 +118,10 @@ int main(int argc, char **argv){
     //printf("Ideated! %d, %d\n%f, %f\n", jimmy.minWidth, jimmy.minHeight, jimmy.flexX, jimmy.flexY);
 
     // 3) Set target dimensions
-    jimmy.transform.width = jimmy.minWidth * 1;
-    jimmy.transform.height = jimmy.minHeight * 1;
+    int targetWidth = 1;
+    int targetHeight = 1;
+    jimmy.transform.width = (jimmy.minWidth > targetWidth) ? jimmy.minWidth : targetWidth;
+    jimmy.transform.height = (jimmy.minHeight > targetHeight) ? jimmy.minHeight : targetHeight;
     jimmy.transform.x = 2;  // Sheath outer comp.
     jimmy.transform.y = 2;
     jimmy.transform.z = -1; // Sheath comp.

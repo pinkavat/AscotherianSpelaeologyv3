@@ -17,9 +17,12 @@
 *   A key part of making the algorithm produce interesting structures is picking the right patterns.
 *
 *   TODO further documentation.
+*   TODO make data-driven
 *
 * written January 2022
 */
+
+#define ABSOLUTE_MAXIMUM_RECURSIVE_DEPTH 20     // Stopgap against infinite recursion (probably never encountered in well-formed situations)
 
 void selectAndApplyParcelGenerator(struct parcel *parcel);
 

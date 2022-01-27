@@ -4,7 +4,7 @@
 // See header for details
 
 
-void divideParametersByGrid(struct parcelGenParameters *sourceParameters, struct recursorGridSignature *signature, struct parcel *children){
+void divideParametersByGrid(struct parcelGenParameters *sourceParameters, const struct recursorGridSignature *signature, struct parcel *children){
     // TODO code outline
     /*
         If child is TERMINAL, copy gate/path, deepen; blank other fields

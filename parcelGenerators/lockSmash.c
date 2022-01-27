@@ -65,6 +65,7 @@ void lockSmashRealizer(void *context, struct parcel *parcel){
     t.y = parcel->shieldHeight;
     t.width = coreSize;
     t.height = coreSize;
+    t.flipV = 1;
     gTInherit(&(parcel->transform), &t);
 
     gTRegionIterate(&t, map, &drawCallback, 0, 0, coreSize, coreSize);

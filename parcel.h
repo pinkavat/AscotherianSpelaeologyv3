@@ -80,7 +80,8 @@
 *       E (for "end") has only one connection through gate 0; this is the end of a flange path
 *       L enters through gate 0 and leaves through gate 1
 *       I enters through gate 0 and leaves through gate 2
-*       TL enters through gate 0 and leaves through gate 1, with gate 2 being a flange
+*       TLS enters through gate 0 and leaves through gate 1, with gate 2 being a flange
+*       TLT enters through gate 0 and leaves through gate 1, with gate 3 being a flange
 *       TI enters through gate 0 and leaves through gate 2, with gate 1 being a flange
 *
 *       XL enters through gate 0 and leaves through gate 1, with gates 2 and 3 being flanges
@@ -89,7 +90,7 @@
 *
 *   Also note: order and values of enum is relied upon by other functions, to know how many gates to expect
 */
-enum parcelShapes {V_SHAPE = 0, E_SHAPE, L_SHAPE, I_SHAPE, TL_SHAPE, TI_SHAPE, XL_SHAPE, XI_SHAPE};
+enum parcelShapes {V_SHAPE = 0, E_SHAPE, L_SHAPE, I_SHAPE, TLS_SHAPE, TLT_SHAPE, TI_SHAPE, XL_SHAPE, XI_SHAPE};
 
 
 

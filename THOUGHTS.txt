@@ -9,6 +9,7 @@
         3) TI-landing doesn't work because of the sheather. What to do?
             --> Here's your answer: make a "Landing TI" and wherever it's used the parcel leading into it is given gatesize at least 2
                 (we'll have to square it with the sheather though; the sheathing must be removed anyway)
+        4) Trans-shield holepunching for base case in X cases (we should have watertight failsafes!)
 
     FEATURE / IMPROVEMENT LIST
         1) Flip option for mapHelper autotile
@@ -21,6 +22,7 @@
         8) Postprocess: Rock sprinkler
         9) Postprocess: Countersinker
         10) Longfail recursor type: failing a puzzle causes retraversal of large area
+        11) Make parcel selector data-driven; the parcel selector as a whole doesn't need to know what it's selecting at all.
 
 
     WILD FUTURE OPTIMIZATION LIST
@@ -332,7 +334,29 @@
         2) Handcode grid signatures for each pattern
         3) Obligate list system
         4) Parameter divider thereupon based
-        
 
+    CAME ACROSS ANOTHER REALLY STUPID OVERSIGHT when making the handcoded grid sigs.
+    There are TWO KINDS OF TL FLANGE: one where the flange continues straight, and one where it heads left. (The same is not true of TI, as we can just flip it)
+    Also note the following: Ledge inputs only work for one of those kinds of flange.
+    Added it in.
+
+
+    HOLD ON: Is there any impediment to making the ENTIRE SELECTOR SYSTEM DATA-DRIVEN...?
+    Or would such a thing be premature optimization?
+    After all, the selector is a system that takes a parcel and populates it. It does so either using a GRID RECURSOR (data-based by signature) or a BASE CASE
+    (data-based by function pointer); making its choice which to use based on a table (data!) in the recursive case or an obligate/random set (data!) in the base case.
+    DOES THE SELECTOR, AT ANY POINT, NEED TO KNOW WHAT IT'S SELECTING OVER....?
+        --> The selector does have to know what it means to "bottom out".
+        --> The selector decides between grid signatures based on shape (at present).
+        --> The selector has to select between potentials if no obligates (but does it need to know the mapping between potential/obligate IDs and the underlying functions?)
+            (our assumption is that, for obligates, it's passing metadata to the funcs (so an NPC placer, for instance, knows which NPC it's placing))
+            (but of course such context could be abstracted away)
+    It's a worthy goal I think.
+    ADDED TO POST-FEATURE LIST; FOR NOW IT'S NOT REALLY WORTH IT.
+
+===============================================================================
+    January 26
+
+    Had a thought: Special fork handling in recursors may not be necessary; we MAY BE ABLE TO CREATE FORKS OUT OF WHOLE CLOTH USING NOTHING BUT T-FLANGES...?
 
 ===============================================================================
