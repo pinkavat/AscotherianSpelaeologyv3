@@ -17,7 +17,7 @@
 
 struct parcelGenParameters {
 
-    unsigned int recursionDepth;                            // The number of recursive steps taken to arrive at this point
+    int recursionDepth;                                     // The number of recursive steps taken to arrive at this point
 
     int gateWidth;                                          // The width of gates generated in this parcel
     int pathWidth;                                          // The width of walkway paths generated in this parcel

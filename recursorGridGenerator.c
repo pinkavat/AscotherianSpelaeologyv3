@@ -196,7 +196,7 @@ void recursorGridIdeator(struct parcel *parcel, const struct recursorGridSignatu
         // Set child height
         //parcel->children[i].transform.z = (i % 3) - 1;   // TODO HEIGHT SELECTOR
         //parcel->children[i].transform.z = 0;   // TODO HEIGHT SELECTOR
-        if(parcel->parameters.recursionDepth == 0){
+        if(parcel->parameters.recursionDepth <= 0){
             parcel->children[i].transform.z = 0;
         } else {
             parcel->children[i].transform.z = -1;

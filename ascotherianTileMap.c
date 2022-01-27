@@ -30,6 +30,8 @@ struct ascoTile ascoTiles[] = {
     {"Tile_Rock_Smash",     "{}", "\e[1m\e[38;5;184m",  ASCO_TILING_NONE},
     {"Tile_Rock_Strength",  "()",",\e[1m\e[38;5;250m",  ASCO_TILING_NONE},
 
+    {"Tile_NPC_Placeholder","NP", "\e[1m\e[48;5;208m\e[38;5;0m",    ASCO_TILING_ROTOR},
+    {"Tile_Item_Placeholder","it", "\e[1m\e[38;5;154m",             ASCO_TILING_NONE},
 };
 
 

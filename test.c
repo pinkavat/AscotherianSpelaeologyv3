@@ -34,9 +34,9 @@ int main(int argc, char **argv){
     #define TABLE_LENGTH 3
     int tableWeights [TABLE_LENGTH][NUM_PATTERN_TYPES] = {
         //Term  Length   Void    Fork   SLedge  Pledge  Fflange Rflange  Bridge 
-        {   0,      0,      0,      0,      0,      0,      0,      0,      0},
         {   0,      0,      0,      0,      1,      0,      0,      0,      0},
-        {   0,      0,      1,      0,      0,      0,      0,      0,      0}
+        {   1,      0,      1,      0,      0,      0,      0,      0,      0},
+        {   0,      0,      0,      0,      1,      0,      0,      0,      0}
     };
     struct patternProbabilityTable probTable = {
         tableWeights,
@@ -104,7 +104,7 @@ int main(int argc, char **argv){
     // 2) Run grid ideator on new parcel
     struct parcel jimmy;
     jimmy.shape = V_SHAPE;
-    jimmy.parameters.recursionDepth = 0;
+    jimmy.parameters.recursionDepth = -1;
     jimmy.parameters.pathWidth = 1;
     jimmy.parameters.gateWidth = 2;
     jimmy.parameters.patternProbabilities = &probTable;

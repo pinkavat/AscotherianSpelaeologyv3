@@ -111,6 +111,11 @@ static const int tileSetData[][7] = {
     {80,117, 16, 16,   0, -4, 13},   // 68: pushable rock
 
     {48, 93, 16, 12,   0,  0, 13},   // 69: Visible Item pickup
+    
+    {188, 47, 17, 29,   0,  -17, 13},// 70: NPC Up-facing
+    {188, 76, 17, 29,   0,  -17, 13},// 71: NPC Right-facing
+    {205, 47, 17, 29,   0,  -17, 13},// 72: NPC Down-facing
+    {205, 76, 17, 29,   0,  -17, 13},// 73: NPC Left-facing
 
 };
 
@@ -151,6 +156,9 @@ static int tileMapToImageData(struct ascoCell cell){
 
     if(cell.tile == TILE_ROCK_SMASH) return 67;
     if(cell.tile == TILE_ROCK_STRENGTH) return 68;
+
+    if(cell.tile == TILE_ITEM_PLACEHOLDER) return 69;
+    if(cell.tile == TILE_NPC_PLACEHOLDER) return 70 + cell.rotation;
 
     return 39;
 }
@@ -277,7 +285,8 @@ void cairoRenderMap(struct ascoTileMap *map){
                 drawTile((map->cells[(y*map->width)+x].tile == TILE_LADDER_ASCENDING) ? tcr : scr, 
                     tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x] + tileSetData[tile][5], tile);
                 */
-                drawTile(scr, tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x] + tileSetData[tile][5], tile);
+                cairo_t *context = scr;
+                drawTile(context, tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x] + tileSetData[tile][5], tile);
 
                 
                 // TODO temporary stair-widening process (since stair termination not yet handled by tileSET

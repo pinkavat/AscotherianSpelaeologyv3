@@ -98,7 +98,10 @@ enum ascoTileID {
     TILE_LADDER,            // A ladder (TODO: up vs down; as variant? Incorporate pit?)
 
     TILE_ROCK_SMASH,        // Smashable rock.
-    TILE_ROCK_STRENGTH      // Pushable rock.
+    TILE_ROCK_STRENGTH,     // Pushable rock.
+
+    TILE_NPC_PLACEHOLDER,   // Random NPC standin for NPC basecase prototyping
+    TILE_ITEM_PLACEHOLDER   // Random Item standin for Item testing
     
 };
 
