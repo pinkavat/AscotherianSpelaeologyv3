@@ -9,7 +9,6 @@
         3) TI-landing doesn't work because of the sheather. What to do?
             --> Here's your answer: make a "Landing TI" and wherever it's used the parcel leading into it is given gatesize at least 2
                 (we'll have to square it with the sheather though; the sheathing must be removed anyway)
-        4) Trans-shield holepunching for base case in X cases (we should have watertight failsafes!)
 
     FEATURE / IMPROVEMENT LIST
         1) Flip option for mapHelper autotile
@@ -358,5 +357,58 @@
     January 26
 
     Had a thought: Special fork handling in recursors may not be necessary; we MAY BE ABLE TO CREATE FORKS OUT OF WHOLE CLOTH USING NOTHING BUT T-FLANGES...?
+
+===============================================================================
+
+    January 27
+
+    Observation: Are Waterworld recursors left to chance (automatic height-set/connection of water regions) or mandated by pattern?
+    The latter is an argument for data-driven recursor selection.
+
+    We've gone as far as we can go without implementing the Obligate List.
+    For a while we toyed with the idea of making it a "linked list" structure; such is foolish pointlessness.
+    Eat the mallocation of true array lists.
+
+    The gist of mem management boils down to:
+        1) Allocation performed by initial condition and divider
+        2) Deallocation performed by divider
+    Problems therewith:
+        1) Initial condition ought to manage its own memory (and be able to pass stack-resident obligate lists)
+        2) If the generator bases out with a nonblank obligate list, the memory is leaked (not really a problem...)
+    Notes:
+        1) No need for dynamically resizing array lists -- the size of each array is known at division-time.
+        2) Does that mean the list could actually be stack-resident within the selector structure...?
+            No. When we hand the parameters off to the divider, the divider returns before recursion occurs. Stackframe lost.
+
+    Nature of Obligate List:
+        Elements describe:
+            1) Type of obligate (data-drive; refer this to a func? --> Param concern)
+                PARAM CONCERN: NPC/Item/Exit ideators get hooks into the world struct through the context, but they have other parameters during ideation
+                    (NPC ref, Item ref, Exit warp ref, etc.)
+                But not all obligates share this need: locks, for instance, don't care about refs (though maybe they should...? after all, they change state
+                BUT NOT PERSISTENTLY like Items or NPCs do)
+                Therefore an obligate can either
+                    a) perform a lookup in the selector, optionally passing the parameter
+                OR
+                    b) refer to a parcel ideator and have ALL IDEATORS POSSESS AN OPTIONAL ARGUMENT.
+                Come to think of it maybe that's how it should be anyway -- such a thing makes the Grid Ideator share the same signature as other ideators.
+    DIMWIT. IDIOT. NUMPTY. I performed a whole-cloth GIT RESET because of this daft idea.
+
+    WE ALREADY HAVE THE PARAMETER STRUCTURE, THROUGH WHICH ALL THIS DATA IS ALREADY PASSED.
+    If we hit a terminal symbol like an NPC encounter (which needs additional data), the data is to be found IN THE OBLIGATE LIST IN THE DAMN PARAMETER FIELD.
+    UNTRANSFORMED, UNCAST, UNPASSED...!
+    So all any base case has to do is look at its obligate list, and yell if there's no data there.
+
+    ALSO REALIZED: Parameter deallocation can happen when Parcel Deallocation does: done by whatever is "child-memory-managing" (i.e. the grid recursor)
+        This means the initial cond. can be static.
+
+
+
+    ANOTHER BLOODY OVERSIGHT (this one's not so bad). Added to notes above. The parameter divider has no way of knowing which order the critpaths come in
+    (without scanning) so it can't guarantee that the obligates are in order.
+    SCANNING WON'T WORK EASILY. We'll need to hardcode it in the signature...!
+    Idea: overclock the type somehow (e.g. CRITICAL_PATH is the last in the enum and anything greater is the next leg of the path...?)
+    -> Use NEGATIVES. -1 is the first critical path, -2 the next, etc.
+
 
 ===============================================================================

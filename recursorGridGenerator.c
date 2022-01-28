@@ -9,7 +9,6 @@
 #define WALKWAY_WIDTH parcel->parameters.pathWidth
 
 
-
 // ==================== HEAP MANAGEMENT FOR SIGNATURE COPYING ====================
 
 // Why isn't there a standard memdup, do you suppose?
@@ -658,7 +657,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
 
 
 
-    // TODO FORKS FORKS FORKS
+    // TODO FORKS (....? necessity for special handling under question)
 
 
     // In case the grid signature is malformed initialize gates to useful failsafes
@@ -709,6 +708,10 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
 
 
     // Lastly, deallocate child memory
+    for(int i = 0; i < signature->width * signature->height; i++){
+        // Free child obligate lists
+        if(parcel->children[i].parameters.obligatesCount > 0) free(parcel->children[i].parameters.obligates);
+    }
     free(parcel->children);
     // ... and data struct
     free(dataStruct->sheathes);

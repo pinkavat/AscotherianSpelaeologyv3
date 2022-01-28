@@ -29,20 +29,18 @@ int main(int argc, char **argv){
 
 
 
-
     // 0) Pattern prob table
     #define TABLE_LENGTH 3
     int tableWeights [TABLE_LENGTH][NUM_PATTERN_TYPES] = {
         //Term  Length   Void    Fork   SLedge  Pledge  Fflange Rflange  Bridge 
-        {   0,      0,      0,      0,      1,      0,      0,      0,      0},
-        {   1,      0,      1,      0,      0,      0,      0,      0,      0},
-        {   0,      0,      0,      0,      1,      0,      0,      0,      0}
+        {   0,      0,      1,      0,      1,      0,      0,      0,      0},
+        {   0,      1,      1,      0,      4,      0,      0,      0,      0},
+        {   2,      0,      1,      0,      0,      0,      0,      0,      0}
     };
     struct patternProbabilityTable probTable = {
         tableWeights,
         TABLE_LENGTH
     };
-
 
 
      
@@ -78,11 +76,13 @@ int main(int argc, char **argv){
     };
     */
 
+
+
     enum parcelShapes shapes[3] = {E_SHAPE, I_SHAPE, E_SHAPE};
     unsigned int rotations[3] = {2, 0, 0};
     unsigned int flipHs[3] =    {0, 0, 0};
     unsigned int flipVs[3] =    {0, 0, 0};
-    enum parameterDivisionTypes divTypes[3] = {TERMINAL, CRITICAL_PATH, TERMINAL};
+    int divTypes[3] = {TERMINAL, -1, TERMINAL}; // Middle one's on the critpath
     cellPopulatorFunctionPtr popFuncs[3] = {&doorIdeator, &selectAndApplyParcelGenerator, &doorIdeator};
     
     struct recursorGridSignature gridSig = {
@@ -99,7 +99,6 @@ int main(int argc, char **argv){
 
     
     
-    
 
     // 2) Run grid ideator on new parcel
     struct parcel jimmy;
@@ -108,6 +107,9 @@ int main(int argc, char **argv){
     jimmy.parameters.pathWidth = 1;
     jimmy.parameters.gateWidth = 2;
     jimmy.parameters.patternProbabilities = &probTable;
+    
+    jimmy.parameters.obligates = (struct obligate[]){{ (void(*)(void *))&lockSmashIdeator },{ (void(*)(void *))&testLakeIdeator },{ (void(*)(void *))&lockSmashIdeator }};
+    jimmy.parameters.obligatesCount = 3;
 
     recursorGridIdeator(&jimmy, &gridSig);
     //selectAndApplyParcelGenerator(&jimmy);

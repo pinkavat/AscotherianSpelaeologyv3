@@ -22,8 +22,8 @@ typedef void (*cellPopulatorFunctionPtr)(struct parcel *);  // The class of func
 
 // Each cell in the grid (each parcel) is of one of the below types, which defines how the grid recursor will assign its parameters.
 enum parameterDivisionTypes {
+    // CRITICAL_PATH: wherever this enum is used, the value is typed as a signed int, and values less than zero are on the
     TERMINAL,       // This parcel is a forced base case (i.e. its populator function is nonrecursive) so parameters are mostly irrelevant
-    CRITICAL_PATH,  // Divide critical path params (obligates, etc.) serially among all parcels of this type
     SHORTCUT_PATH,  // Set backtracking lock to obligate for this parcel
     FLANGE_PUZZLE,  // TODO define reward theory
     FLANGE_REWARD,  // TODO "
@@ -45,14 +45,8 @@ struct recursorGridSignature {
     unsigned int *flipVs;                               // Likewise, for vertical flips         (see gridTransform.h if in doubt)
    
 
-    enum parameterDivisionTypes *parameterDivisionType; // How the grid solver should assign this parcel's parameters (see above)
+    int *parameterDivisionTypes;                        // How the grid solver should assign this parcel's parameters (see enum parameterDivisionTypes above)
 
-    /* TODO LEGACY REMOVE 
-    int *pathGroups;                                    // 2D row(etc...), contains the path IDs of the corresponding parcels (see above)
-    
-    unsigned int numCritPaths;                          // The number of different path IDs to expect (1 or greater; critical path IDs)
-    unsigned int numShortcutPaths;                      // Ditto for -1 or lesser shortcut path IDs
-    */
 
     int gateSourceIndices[4];                           // If the shape of the grid includes gate n, element n of this array is the index of the
                                                         // child that provides said gate. (i.e. child's absolute gate n becomes self's gate n)

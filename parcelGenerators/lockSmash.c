@@ -14,8 +14,8 @@ void lockSmashIdeator(struct parcel *parcel){
     parcel->data = NULL;
     parcel->transform = newGridTransform();
 
-    parcel->flexX = 1.0;    // Rockfield wants to be as small as possible
-    parcel->flexY = 1.0;
+    parcel->flexX = 0.0;    // Rockfield wants to be as small as possible
+    parcel->flexY = 0.0;
 
     parcel->minWidth = parcel->parameters.gateWidth + 3;    // + walkway
     parcel->minHeight = parcel->parameters.gateWidth + 2;
