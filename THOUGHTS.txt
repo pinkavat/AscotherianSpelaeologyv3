@@ -21,7 +21,9 @@
         8) Postprocess: Rock sprinkler
         9) Postprocess: Countersinker
         10) Longfail recursor type: failing a puzzle causes retraversal of large area
-        11) Make parcel selector data-driven; the parcel selector as a whole doesn't need to know what it's selecting at all.
+        11) Make parcel selector data-driven; the parcel selector as a whole doesn't need to know what it's selecting at all.   
+        12) Experiment with height-based base selection schemes ("tidal grotto")
+        13) If ledge units are too long, widen their blockage shield (so that we can hand it off to a ridgebreaker or at least the oozer; end those "fences"!)
 
 
     WILD FUTURE OPTIMIZATION LIST
@@ -52,12 +54,6 @@
             --> adjust resizers accordingly??
             Gate sizes should remain between 0 and 3 -- I don't really think about the ramifications of gates larger than that and some base generators
             may yield odd/incorrect behaviour.
-        NOTES FOR HEIGHT SELECTOR:
-            1) Water is always the same height intraparcel (-1 presumably?)
-            2) Void is always 0. (UNDER RECONSIDERATION)
-            3) Recursors are always 0 or -1 (if they're going to contain valid void...?) (UNDER RECONSIDERATION)
-
-
 
 
 === Through Jan 20 moved to OLDTHOUGHTS.txt ===
@@ -410,5 +406,61 @@
     Idea: overclock the type somehow (e.g. CRITICAL_PATH is the last in the enum and anything greater is the next leg of the path...?)
     -> Use NEGATIVES. -1 is the first critical path, -2 the next, etc.
 
+
+
+    Done so. So far, seems to work OK.
+    Next we really have to tackle the postprocessor, with those wide-ass door edges. Needs a more general fill step than thinfilling....
+    Also on the table is the height-selector. One idea is that entrances tend to be height zero (height sameness shouldn't engulf the entire grid...)
+
+
+===============================================================================
+    January 28
+
+    Started by quickly implementing an isolation-based culler. Seems to work really well. Considering completely removing the thinfilling step.
+
+    Moved height selector into its own function -- selecting heights at random, we're encountering the weirdness we predicted in v2.
+    Either:
+        a) Work out what states cause it and explicitly disallow
+            It occurs when a recursor marking its internal parcel as -1 (bordering it) borders another parcel marked as -1 (but the recursor itself is marked 0, so
+            the two don't merge).
+        b) resolve using another MS-postproc
+
+    Implemented basic large rock accretor, no problems.
+    ANOTHER IDEA FOR POSTPROC: Instead of reabsorption to deal with those long blockage "fences", simply detect their presence and scrub to TILE_UNRESOLVED.
+    Check this logic: if a blockage is bounded on three sides by impassable tiles, then it may safely resolve to passable floor.
+    From a purely Eulerian POV, this seems sound -- after all, if it is bounded on three sides, then it doesn't matter whether it's passable or not.
+    ACTUAL CHECK shows this algo only removes every other blockage from the fence (*sigh*)
+    We may be able to do it with the REVERSED MOORE NEIGHBORHOOD LOCALITY CHECK. Prototype this.
+    Afer all, if a blockage
+
+===============================================================================
+    January 30
+
+    Prototyped an NPC; it's time to think about hooks perhaps. Or not.
+    It may behoove us to set the static NPCs' sightlines in the generator -- these ones (placed in base-cases) can see as far as the exit gate.
+
+    What we definitely have to do is handle the blockage-fences somehow. We can reintroduce thinfilling I think...
+    AUTOMATON THAT PASSES OVER ALL BLOCKAGES.
+
+    Had another thought about the probability for the sprinkler pass: it's affected by UNRESOLVEDs as well as impassable tiles. (i.e. an UNRESOLVED bordered
+    by BLANKS has less chance to be rock-sprinkled than an UNRESOLVED bordered by other UNRESOLVEDs)
+
+    Note: WE DON'T HAVE TO WORRY ABOUT ROCK SPRINKLER PERMISSIONS ANY MORE. Those were a relic from the WFC days, where the cave was more loosely managed.
+    Now all goof is enforced by control systems; regions of the cave can be snipped off, filled, and oozed.
+
+    Question is: Do we sprinkle before oozing, or after?
+    What we could do is use the ridgebreaking step: Ridges re-resolve to blockage, fences are bashed, and we sprinkle then run general blockage resolution.
+    Hm. One of the advantages of ridgebreaking was the inverse automaton.
+
+    Note this: blockage "fences" appear in three places.
+    1) The ledge parcel (where we can clobber them with ridges and ridgebreak if we have to)
+    2) On the upper edge of oozed cliffs (where an inverse ooze may serve)
+    3) Between same-height parcels (we really, really need to update the height-control logic...)
+
+
+===============================================================================
+    January 31
+
+    Started prototyping the rock sprinkler.
 
 ===============================================================================

@@ -127,12 +127,12 @@ void rotateCell(struct ascoCell *cell, unsigned int rotation, unsigned int flipH
         break;
 
         case ASCO_TILING_LARGE:
-            // Reacts the same as MS-concave if an anchor corner (TODO NOT QUITE TRUE)
+            // Reacts the same as MS-concave if an anchor corner
             if(cell->variant == 1){
                 if(flipH) cell->rotation = flipHelper(cell->rotation, 0);
                 if(flipV) cell->rotation = flipHelper(cell->rotation, 2);
                 cell->rotation = (cell->rotation + rotation) % 4;
-            }
+            } // Otherwise doesn't react
         break;
     }
 }
@@ -162,6 +162,14 @@ static const char * const doorGraphics[4] = {
     "D^", "D>", "Dv", "<D"
 };
 
+static const char * const NPCGraphics[4] = {
+    "N^", "N>", "Nv", "<N"
+};
+
+static const char * const largeRockGraphics[4] = {
+    "`\\",  ".|",  "|.",  "/`"
+};
+
 
 void printAscoTileMap(struct ascoTileMap *map){
     for(int y = 0; y < map->height; y++){
@@ -170,12 +178,19 @@ void printAscoTileMap(struct ascoTileMap *map){
 
             printf("%s%s", (x + y) % 2 ? PRINT_COLOUR_BACKGROUND_1 : PRINT_COLOUR_BACKGROUND_2, ascoTiles[cell.tile].debugColour);
 
+            // TODO switch to switch!
             if(cell.tile == TILE_STAIR){
                 // Stairs get special graphics
                 printf("%s\e[0m", stairGraphics[cell.rotation]);
             } else if(cell.tile == TILE_DOOR){
                 // Doors get special graphics
                 printf("%s\e[0m", doorGraphics[cell.rotation]);
+            } else if(cell.tile == TILE_NPC_PLACEHOLDER){
+                // NPCs get special graphics
+                printf("%s\e[0m", NPCGraphics[cell.rotation]);
+            } else if(cell.tile == TILE_ROCK_LARGE){
+                // Large Rocks get special graphics
+                printf("\e[1m%s\e[0m", largeRockGraphics[cell.rotation]);
             } else if(ascoTiles[cell.tile].tilingType == ASCO_TILING_MS && cell.variant > 0){
                 // MS-tile border
                 printf("%s\e[0m", MSGraphics[cell.variant - 1][cell.rotation]);

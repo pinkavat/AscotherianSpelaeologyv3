@@ -108,8 +108,8 @@ int main(int argc, char **argv){
     jimmy.parameters.gateWidth = 2;
     jimmy.parameters.patternProbabilities = &probTable;
     
-    jimmy.parameters.obligates = (struct obligate[]){{ (void(*)(void *))&lockSmashIdeator },{ (void(*)(void *))&testLakeIdeator },{ (void(*)(void *))&lockSmashIdeator }};
-    jimmy.parameters.obligatesCount = 3;
+    jimmy.parameters.obligates = (struct obligate[]){{ (void(*)(void *))&NPCEncounterIdeator },{ (void(*)(void *))&NPCEncounterIdeator }};
+    jimmy.parameters.obligatesCount = 2;
 
     recursorGridIdeator(&jimmy, &gridSig);
     //selectAndApplyParcelGenerator(&jimmy);

@@ -26,7 +26,7 @@ enum ascoTilingTypes {
     ASCO_TILING_ROTOR,      // Does not tile but does rotate        (Center)
     ASCO_TILING_MS,         // MS tiling with center and terminii   (Center, Straight, Convex, Concave, Left-hand terminus, Right-hand terminus)
     ASCO_TILING_FENCE,      // Direct connectivity                  (5 degrees)
-    ASCO_TILING_LARGE,      // Super-sized tiles                    (Interstitial, Corner [convex])
+    ASCO_TILING_LARGE,      // Super-sized tiles                    (Interstitial, Corner [convex, same as MS])
 };
 
 

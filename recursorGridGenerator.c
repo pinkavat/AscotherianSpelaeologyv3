@@ -191,19 +191,13 @@ void recursorGridIdeator(struct parcel *parcel, const struct recursorGridSignatu
         parcel->children[i].transform.rotation = signature->rotations[i];
         parcel->children[i].transform.flipH = signature->flipHs[i];
         parcel->children[i].transform.flipV = signature->flipVs[i];
-
-        // Set child height
-        //parcel->children[i].transform.z = (i % 3) - 1;   // TODO HEIGHT SELECTOR
-        //parcel->children[i].transform.z = 0;   // TODO HEIGHT SELECTOR
-        if(parcel->parameters.recursionDepth <= 0){
-            parcel->children[i].transform.z = 0;
-        } else {
-            parcel->children[i].transform.z = -1;
-        }
     }
 
+    // 6) Set child heights
+    if(parcel->parameters.recursionDepth >= 0) gridHeightSelect(parcel, signature);
 
-    // 6) Compute sheath data
+
+    // 7) Compute sheath data
     // This loop could probably be single, but better to be sure as the human than efficient as the computer
     dataStruct->sheathes = (void *)malloc(sizeof(struct sheathData) * signature->width * signature->height);
     for(int y = 0; y < signature->height; y++){
@@ -242,14 +236,14 @@ void recursorGridIdeator(struct parcel *parcel, const struct recursorGridSignatu
     }
 
 
-    // 7) Compute row/col min dimensions and flex scores
+    // 8) Compute row/col min dimensions and flex scores
     int minColDims[signature->width];
     int minRowDims[signature->height];
     float xFlexes[signature->width];
     float yFlexes[signature->height];
     computeMinDimsAndFlexScores(parcel->children, dataStruct->sheathes, minColDims, minRowDims, xFlexes, yFlexes, signature->width, signature->height);
 
-    // 8) Establish overall minimum dimensions and flex scores
+    // 9) Establish overall minimum dimensions and flex scores
     parcel->minWidth = (parcel->shape == V_SHAPE) ? 0 : WALKWAY_WIDTH;    // Initially add walkway width if non-V
     for(int i = 0; i < signature->width; i++) parcel->minWidth += minColDims[i];
     parcel->minHeight = 0;

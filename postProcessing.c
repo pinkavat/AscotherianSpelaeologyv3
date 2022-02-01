@@ -1,10 +1,11 @@
+#include <limits.h> // for INT_MAX in isolation computation
 
 #include "postProcessing.h"
 // postProcessing.c
 // See header for details
 
 
-
+/* TODO: under consideration for replacement with general isolation fill
 // THINFILLING STEP
 // TODO document better
 // TODO migrate to own file?
@@ -50,6 +51,58 @@ void thinFillingStep(struct ascoTileMap *map){
 
     freeCoordQueue(queue);
 }
+
+*/
+
+
+
+// TODO document
+void computeIsolation(struct ascoTileMap *map, int *isolationMap){
+    // Set up a coord queue
+    struct coordQueue *queue = newCoordQueue(128);    // TODO initial size...?
+
+    // Pass 1: set initial values and enqueue all critpath tiles
+    for(int y = 0; y < map->height; y++){
+        for(int x = 0; x < map->width; x++){
+            if(mapCell(map, x, y).tile == TILE_BLANK){
+                isolationMap[y * map->width + x] = 0;
+                enCoordQueue(queue, x, y);
+            } else if(mapCell(map, x, y).tile == TILE_UNRESOLVED) {
+                isolationMap[y * map->width + x] = INT_MAX;
+            } else {
+                isolationMap[y * map->width + x] = -1;
+            }
+        }
+    }
+
+    // Pass 2: floodfill from critical path tiles
+    int x, y;
+    while(deCoordQueue(queue, &x, &y)){
+        int selfIsolation = isolationMap[(y * map->width) + x];
+        if(y > 0 && isolationMap[(y - 1) * map->width + x] > selfIsolation + 1){
+            isolationMap[(y - 1) * map->width + x] = selfIsolation + 1;
+            enCoordQueue(queue, x, y - 1);
+        }
+        if(x < map->width - 1 && isolationMap[y * map->width + x + 1] > selfIsolation + 1){
+            isolationMap[y * map->width + x + 1] = selfIsolation + 1;
+            enCoordQueue(queue, x + 1, y);
+        }
+        if(y < map->height - 1 && isolationMap[(y + 1) * map->width + x] > selfIsolation + 1){
+            isolationMap[(y + 1) * map->width + x] = selfIsolation + 1;
+            enCoordQueue(queue, x, y + 1);
+        }
+        if(x > 0 && isolationMap[y * map->width + x - 1] > selfIsolation + 1){
+            isolationMap[y * map->width + x - 1] = selfIsolation + 1;
+            enCoordQueue(queue, x - 1, y);
+        }
+
+    }
+
+    freeCoordQueue(queue);
+}
+
+
+
 
 
 
@@ -232,7 +285,18 @@ void inaccessibleCliffStep(struct ascoTileMap *map){
 
 void tempPostProcess(struct ascoTileMap *map){
     // 1) Thinfilling step
-    thinFillingStep(map);
+    //thinFillingStep(map);
+
+    // Compute isolation
+    int isolation[map->height][map->width];
+    computeIsolation(map, (int *)isolation);
+
+    // Floors too isolated become blockages
+    for(int y = 0; y < map->height; y++){
+        for(int x = 0; x < map->width; x++){
+            if(isolation[y][x] > 4) mapCell(map, x, y).tile = TILE_BLOCKAGE;
+        }
+    }
 
     // 2) Cliff oozing
     for(int i = 0; i < 5; i++){
@@ -241,4 +305,23 @@ void tempPostProcess(struct ascoTileMap *map){
 
     // 3) Flatten blockages atop cliffs to inaccessible cliff
     inaccessibleCliffStep(map);
+
+
+    // Temp large rock accretion step (only operating on oozed cliffs for now)
+    for(int y = 0; y < map->height - 1; y++){
+        for(int x = 0; x < map->width - 1; x++){
+            if( 
+                (mapCell(map, x, y).tile == TILE_CLIFF && mapCell(map, x, y).variant == 2 && mapCell(map, x, y).rotation == 3) && 
+                (mapCell(map, x+1, y).tile == TILE_CLIFF && mapCell(map, x+1, y).variant == 2 && mapCell(map, x+1, y).rotation == 0) && 
+                (mapCell(map, x, y+1).tile == TILE_CLIFF && mapCell(map, x, y+1).variant == 2 && mapCell(map, x, y+1).rotation == 2) && 
+                (mapCell(map, x+1, y+1).tile == TILE_CLIFF && mapCell(map, x+1, y+1).variant == 2 && mapCell(map, x+1, y+1).rotation == 1)
+            ){
+                mapCell(map, x, y).tile = TILE_ROCK_LARGE;
+                mapCell(map, x+1, y).tile = TILE_ROCK_LARGE;
+                mapCell(map, x, y+1).tile = TILE_ROCK_LARGE;
+                mapCell(map, x+1, y+1).tile = TILE_ROCK_LARGE;
+            }
+        }
+    }
+
 }

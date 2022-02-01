@@ -42,4 +42,6 @@
 
 #include "parcelGenerators/testLake.h"
 
+#include "parcelGenerators/NPCEncounter.h"
+
 #endif
