@@ -461,6 +461,56 @@
 ===============================================================================
     January 31
 
-    Started prototyping the rock sprinkler.
+    Started prototyping the rock sprinkler. Here's the thinking: it activates after the oozing, and the blockages are resolved by some other component.
+    ROCK SPRINKLER then
+    FENCEBREAKER then
+    BLOCKAGE AMALGAMATOR
+
+    Prototype rock sprinkler shows our error: the rock expansion can cut off whole regions without triggering thinfilling.
+    We need to bring back the placer-checker and screen it properly.
+
+    Merely inverting the validRockSite checker isn't enough. We need proper inverse connectivity logic for fencebreaking.
+
+    Prototype of this logic is correct in nature, but its function is undesired (allows bypassing of NPCs by trimming topo-adj fences). Hm. It does remove
+    an AWFUL LOT of the blockages, though. Makes the ledges look a bit weird.
+
+===============================================================================
+    February 1
+
+    The neighbor-based trimmer fell through, so we need a revision. The blockages we can safely prune are all of a kind: sitting at the tops of straight cliffs.
+    A tile is a member of a "fence" if:
+        1) two opposite neighbors are blockages
+        2) perpendicular neighbor is cliff
+        3) neighbor opposite that is flat floor (blank or unres)
+    Test a looser logic: exactly three blocked neighbors, one of which is a cliff.
+
+    THAT WORKS. Combined with thinfilling it's a good look.
+    We still have the occasional problem of large topo-unadj blockers leaving unsightly 1x wide strips of blockage though.
+    
+    CONSIDER THIS REFINEMENT: at higher recursion levels, topo-adj blockers get wider...?
+    Also, at higher levels, paths should be wider.
+
+    Also it may be a neat idea to sprinkle once, ooze briefly, then sprinkle again -- save on blockage amalgamation...?
+
+
+    THOUGHT OF A POTENTIAL SOLUTION FOR THE 1-WIDE TOPO STRIPS: MOVE THE L-PROBLEM TO THE WALKWAY DRAWING UNIT.
+    Think of it this way:
+        The reason we have the 1-wide gate buffer zone is to join two regions of different sheath types (i.e. different heights)
+        However, this assumption exists to counter exactly one edge case: the landing zone is inside a sheath offset by one, whereas the incoming gate is not.
+        This circumstance implies, definitionally, that there is already a sheath buffer between the landing parcel and its outlet parcel (a cliff).
+        Therefore, there is no L-collision in that case.
+    THEREFORE:
+        If a parcel is not the same height as its bottom neighbor and parcel is L-shaped, the height-change blocks L-clash.
+        If it is the same height, then the L-clash can be prevented by drawing a strip in the bottom of the walkway. This strip won't clobber the
+        incoming gate from the left neighbor, because it must be level with it under the assumption of the gate-buffer.
+    GRAPHING THIS OUT HAS SHOWN US ONE EXCEPTION.
+        If the lower border is same-height sheath (blank but not culled) and the left neighbor has a culled lower border, then the gate may intersect with the
+        walkway's bottom tile.
+    Here's the algorithm, then, performed in the grid recursor:
+        IDEATION STEP:
+        1) Compute sheath data with permissive topo-adj (no L detection).
+        REALIZATION STEP:
+        1) If I am an L-case and my sheath border was FLAT, make it BLOCKED.
+        2) If I am an L-case and my sheath border is NONE, pass the burden of blockage onto the walkway (using two parameters perhaps)
 
 ===============================================================================
