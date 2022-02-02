@@ -4,7 +4,7 @@
 // See header for details
 
 
-void realizeWalkwayAndShield(struct ascoTileMap *map, struct parcel *parcel, struct gate *innerGate, struct gate *outerGate){
+void realizeWalkwayAndShield(struct ascoTileMap *map, struct parcel *parcel, struct gate *innerGate, struct gate *outerGate, int topBarrier, int bottomBarrier){
     // TODO something more interesting, no doubt.
     // TODO gate track
 
@@ -24,9 +24,19 @@ void realizeWalkwayAndShield(struct ascoTileMap *map, struct parcel *parcel, str
         fillRect(map, &pathCell, &(parcel->transform), parcel->gates[3].position, 0, parcel->gates[3].size, parcel->shieldHeight);
     }
 
+    // 4) Draw barriers (if needful)
+    struct ascoCell barrierCell = {TILE_BLOCKAGE, 0, 0, 0};
+    if(topBarrier){
+        fillRect(map, &barrierCell, &(parcel->transform), 0, 0, parcel->walkwayWidth, 1);
+    }
+    if(bottomBarrier){
+        fillRect(map, &barrierCell, &(parcel->transform), 0, parcel->transform.height - 1, parcel->walkwayWidth, 1);
+    }
 
 
-    // 4) Draw path through the walkway
+
+
+    // 5) Draw path through the walkway
     if(parcel->walkwayWidth > 0){
         // Determine where the path falls
         int pathX = 0, pathWidth = 0;

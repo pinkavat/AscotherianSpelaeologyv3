@@ -215,14 +215,11 @@ void recursorGridIdeator(struct parcel *parcel, const struct recursorGridSignatu
             // Recursor walkway clash preventor
             if(x == 0 && !otherHasGate(child->shape, &(child->transform), 0) && parcel->shape != V_SHAPE) topoAdj[3] = 0;
 
-            // L-case inelegant solution (TODO improve)
-            // Only works for gate 1 for now, not gate 3
-            int throwaway;
-            if((getGateIndex(&(child->transform), 3, &throwaway) == 1) && selfHasGate(child->shape, 1)) topoAdj[0] = 0;
-            if((getGateIndex(&(child->transform), 2, &throwaway) == 1) && selfHasGate(child->shape, 1)) topoAdj[1] = 0;
-            if((getGateIndex(&(child->transform), 1, &throwaway) == 1) && selfHasGate(child->shape, 1)) topoAdj[2] = 0;
-            if((getGateIndex(&(child->transform), 0, &throwaway) == 1) && selfHasGate(child->shape, 1)) topoAdj[3] = 0;
-        
+            // Adjacent unit clash preventor
+            if(y == 0 && selfHasGate(parcel->shape, 3) && signature->gateSourceIndices[3] != y * signature->width + x) topoAdj[0] = 0;   // Top
+            if(x == signature->width - 1 && selfHasGate(parcel->shape, 2) && signature->gateSourceIndices[2] != y * signature->width + x) topoAdj[1] = 0;   // Right
+            if(y == signature->height - 1 && selfHasGate(parcel->shape, 1) && signature->gateSourceIndices[1] != y * signature->width + x) topoAdj[2] = 0;   // Bottom
+            // Left covered by recursor walkway clash preventor
 
             // Compute height-adj with a helper
             int heightAdj[9];
@@ -447,6 +444,58 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
     distributeDimensionalIncreases(parcel->transform.width - parcel->minWidth, colDims, xFlexes, signature->width);     // x
     distributeDimensionalIncreases(parcel->transform.height - parcel->minHeight, rowDims, yFlexes, signature->height);  // y
 
+
+
+    // Part of the code we developed on February 1, wrote, deleted (idiot!) and had to rewrite; new form of L-correction that doesn't require
+    // topological adjacency check
+    int topWBarriers[signature->width * signature->height];
+    int bottomWBarriers[signature->width * signature->height];
+
+    for(int i = 0; i < signature->width * signature->height; i++){
+        topWBarriers[i] = 0;
+        bottomWBarriers[i] = 0;
+        int throwaway;
+    
+        // Gate 1: bottom barrier check
+        if(selfHasGate(parcel->children[i].shape, 1)){
+            for(int edge = 0; edge < 4; edge++){
+                if(getGateIndex(&(parcel->children[i].transform), 3 - edge, &throwaway) == 1){
+                    switch(dataStruct->sheathes[i].edges[edge]){
+                        case SHEATH_EDGE_FLAT:
+                            dataStruct->sheathes[i].edges[edge] = SHEATH_EDGE_BLOCKAGE;
+                        break;
+                        case SHEATH_EDGE_NONE:
+                            bottomWBarriers[i] = 1;
+                        break;
+                        default: break;
+                    }
+                    break;  // If we found gate 1, stop.
+                }
+            }
+        }
+            
+        // Gate 3: top barrier check
+        if(selfHasGate(parcel->children[i].shape, 3)){
+            for(int edge = 0; edge < 4; edge++){
+                if(getGateIndex(&(parcel->children[i].transform), 3 - edge, &throwaway) == 3){
+                    switch(dataStruct->sheathes[i].edges[edge]){
+                        case SHEATH_EDGE_FLAT:
+                            dataStruct->sheathes[i].edges[edge] = SHEATH_EDGE_BLOCKAGE;
+                        break;
+                        case SHEATH_EDGE_NONE:
+                            topWBarriers[i] = 1;
+                        break;
+                        default: break;
+                    }
+                    break;  // If we found gate 3, stop.
+                }
+            }
+        }
+    }
+
+
+
+
     // *Part 6 sneaks in here* Set up gazumption's precompute array into which gazumping gate indices are stored
     int gazumptionGateIndices[signature->width * signature->height];
     int gazumperIndices[signature->width * signature->height];
@@ -560,7 +609,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
         if(gazumperIndices[i] == -1){
 
             // Borders edge (or malformed)
-            realizeWalkwayAndShield(map, &(parcel->children[i]), &(parcel->children[i].gates[0]), &(parcel->children[i].gates[0]));
+            realizeWalkwayAndShield(map, &(parcel->children[i]), &(parcel->children[i].gates[0]), &(parcel->children[i].gates[0]), topWBarriers[i], bottomWBarriers[i]);
 
         } else {
             struct gate gazumpGate = getGate(parcel->children[gazumperIndices[i]].gates, &(oldTransforms[gazumperIndices[i]]), gazumptionGateIndices[i]);
@@ -568,7 +617,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
             if(gazumpGate.size == 0){
 
                 // Neighbor doesn't have that gate, fail safely
-                realizeWalkwayAndShield(map, &(parcel->children[i]), &(parcel->children[i].gates[0]), &(parcel->children[i].gates[0]));
+                realizeWalkwayAndShield(map, &(parcel->children[i]), &(parcel->children[i].gates[0]), &(parcel->children[i].gates[0]), topWBarriers[i], bottomWBarriers[i]);
 
             } else {
 
@@ -589,7 +638,7 @@ void recursorGridRealizer(void *context, struct parcel *parcel){
 
                 
                 // Finally, realize the walkway and shield of the child
-                realizeWalkwayAndShield(map, &(parcel->children[i]), &innerGate, &(parcel->children[i].gates[0]));
+                realizeWalkwayAndShield(map, &(parcel->children[i]), &innerGate, &(parcel->children[i].gates[0]), topWBarriers[i], bottomWBarriers[i]);
             }
         }
     }

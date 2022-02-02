@@ -513,4 +513,12 @@
         1) If I am an L-case and my sheath border was FLAT, make it BLOCKED.
         2) If I am an L-case and my sheath border is NONE, pass the burden of blockage onto the walkway (using two parameters perhaps)
 
+    I tested this. It failed categorically, due to implicit assumptions we made about the recursive nature of the function. We were thinking too abstractly.
+    Reset with git. Got Resetter's remorse. Decided to rewrite everything I reset. Good lesson though.
+
+    Managed to rewrite evrything AND solve the failure with a bit of jiggering.
+    TODO FOR NEXT TIME:
+        1) Ledge is fucked; assumptions mean that rect must manage its own edge. Give TL ledge an edge on the critside.
+        2) Make testlake's gates in the middle (same for all truly amorphous parcels)
+
 ===============================================================================

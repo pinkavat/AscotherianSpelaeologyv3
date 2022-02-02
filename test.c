@@ -156,7 +156,7 @@ int main(int argc, char **argv){
     jimmy.realizer(&context, &jimmy);
 
     // 7) Handle residuals
-    realizeWalkwayAndShield(map, &jimmy, &(jimmy.gates[0]), &(jimmy.gates[0]));
+    realizeWalkwayAndShield(map, &jimmy, &(jimmy.gates[0]), &(jimmy.gates[0]), 0, 0);
 
     // TODO temp preprint
     //printAscoTileMap(map);

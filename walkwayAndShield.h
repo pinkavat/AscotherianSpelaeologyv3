@@ -14,6 +14,7 @@
 */
 
 // Takes the context map, the parcel whose walkway and shield this is, and the gate of said parcel (inner gate) plus the gate imposed by its neighbor (outer gate)
-void realizeWalkwayAndShield(struct ascoTileMap *map, struct parcel *parcel, struct gate *innerGate, struct gate *outerGate);
+// The last two parameters define whether the burden of L-clobbering is passed onto the walkway.
+void realizeWalkwayAndShield(struct ascoTileMap *map, struct parcel *parcel, struct gate *innerGate, struct gate *outerGate, int topBarrier, int bottomBarrier);
 
 #endif
