@@ -85,19 +85,19 @@ static const int tileSetData[][7] = {
     {168,24, 26, 23,  -5, -5, 13},   // 47: Ladder Descending
     {168, 0, 26, 23,  -5, -5, 13},   // 48: Pit
     
-    {48, 56, 16, 12,   0, 0, 0},     // 49: Top Ledge (basic)
-    {16, 68, 16, 12,   0, 0, 0},     // 50: Right Ledge (basic)
-    {48, 68, 16, 12,   0, 0, 0},     // 51: Bottom Ledge (basic)
-    { 0, 68, 16, 12,   0, 0, 0},     // 52: Left Ledge (basic)
+    {48, 56, 16, 12,   0, 0, 13},     // 49: Top Ledge (basic)
+    {16, 68, 16, 12,   0, 0, 13},     // 50: Right Ledge (basic)
+    {48, 68, 16, 12,   0, 0, 13},     // 51: Bottom Ledge (basic)
+    { 0, 68, 16, 12,   0, 0, 13},     // 52: Left Ledge (basic)
 
-    {32, 56, 16, 12,   0, 0, 0},      // 53: Top Left Edge (ledge parts)
-    {48, 80, 16, 12,   0, 0, 0},      // 54: Top Right Edge
-    {16, 56, 16, 12,   0, 0, 0},      // 55: Right Top Edge
-    {16, 80, 16, 12,   0, 0, 0},      // 56: Right Bottom Edge
-    {32, 80, 16, 12,   0, 0, 0},      // 57: Bottom Right Edge
-    {32, 68, 16, 12,   0, 0, 0},      // 58: Bottom Left Edge
-    { 0, 80, 16, 12,   0, 0, 0},      // 59: Left Bottom Edge
-    { 0, 56, 16, 12,   0, 0, 0},      // 60: Left Top Edge
+    {32, 56, 16, 12,   0, 0, 13},      // 53: Top Left Edge (ledge parts)
+    {48, 80, 16, 12,   0, 0, 13},      // 54: Top Right Edge
+    {16, 56, 16, 12,   0, 0, 13},      // 55: Right Top Edge
+    {16, 80, 16, 12,   0, 0, 13},      // 56: Right Bottom Edge
+    {32, 80, 16, 12,   0, 0, 13},      // 57: Bottom Right Edge
+    {32, 68, 16, 12,   0, 0, 13},      // 58: Bottom Left Edge
+    { 0, 80, 16, 12,   0, 0, 13},      // 59: Left Bottom Edge
+    { 0, 56, 16, 12,   0, 0, 13},      // 60: Left Top Edge
 
     {48,105, 16, 12,   0, 0, 0},      // 61: Bridge Hzont top   
     {48,117, 16, 12,   0, 0, 0},      // 62: Bridge Hzont mid
@@ -167,8 +167,8 @@ static int tileMapToImageData(struct ascoCell cell){
 
 
 // Draw a tile
-static void drawTile(cairo_t *cr, cairo_surface_t *tileSet, int x, int y, unsigned int tile){
-    cairo_set_source_surface(cr, tileSet, x - tileSetData[tile][0], y - tileSetData[tile][1]);
+static void drawTile(cairo_t *cr, cairo_surface_t *tileSet, int x, int y, unsigned int tile, int palette){
+    cairo_set_source_surface(cr, tileSet, x - tileSetData[tile][0], y - (tileSetData[tile][1] + 160 * palette));
     cairo_rectangle(cr, x, y, tileSetData[tile][2], tileSetData[tile][3]);
     cairo_fill(cr);
 }
@@ -202,7 +202,7 @@ static void drawBridge(cairo_t *cr, cairo_surface_t *tileSet, int startX, int st
                     tile = 63;
                 }
             }
-            drawTile(cr, tileSet, startX + x*16, startY + y*12, tile);
+            drawTile(cr, tileSet, startX + x*16, startY + y*12, tile, 0);
         }
     }
 }
@@ -213,7 +213,7 @@ static void drawBridge(cairo_t *cr, cairo_surface_t *tileSet, int startX, int st
 #define BUFFER_Y 12
 
 
-void cairoRenderMap(struct ascoTileMap *map){
+void cairoRenderMap(struct ascoTileMap *map, int palette){
 
     // Prepare arrays of y-offsets and skips
     int *yOffset = (int *)malloc(map->width *  sizeof(int));
@@ -279,14 +279,14 @@ void cairoRenderMap(struct ascoTileMap *map){
                 // First draw underlying tile (TODO floor-data instead...)
                 int subTile = tileSetData[tile][6];
                 yOffset[x] += tileSetData[subTile][5];
-                drawTile(cr, tileSet, x * 16 + BUFFER_X + tileSetData[subTile][4], yOffset[x], subTile);
+                drawTile(cr, tileSet, x * 16 + BUFFER_X + tileSetData[subTile][4], yOffset[x], subTile, palette);
                 // Then draw the tile
                 /* TODO handling of ladder here needs conversion
                 drawTile((map->cells[(y*map->width)+x].tile == TILE_LADDER_ASCENDING) ? tcr : scr, 
                     tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x] + tileSetData[tile][5], tile);
                 */
                 cairo_t *context = scr;
-                drawTile(context, tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x] + tileSetData[tile][5], tile);
+                drawTile(context, tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x] + tileSetData[tile][5], tile, palette);
 
                 
                 // TODO temporary stair-widening process (since stair termination not yet handled by tileSET
@@ -298,7 +298,7 @@ void cairoRenderMap(struct ascoTileMap *map){
                 )){
                     // No bounds check, because stairs will never appear on the map boundary (if they do, I'll eat the segfault as this isn't production-destined code)
                     int widenerTile = 40 + mapCell(map, x, y).rotation;
-                    drawTile(tcr, tileSet, x * 16 + BUFFER_X + tileSetData[widenerTile][4], yOffset[x] + tileSetData[widenerTile][5], widenerTile);
+                    drawTile(tcr, tileSet, x * 16 + BUFFER_X + tileSetData[widenerTile][4], yOffset[x] + tileSetData[widenerTile][5], widenerTile, palette);
                 }
 
                 // Then move on
@@ -306,7 +306,7 @@ void cairoRenderMap(struct ascoTileMap *map){
             } else {
                 // Regular-handling rock tile
                 yOffset[x] += tileSetData[tile][5];
-                drawTile(cr, tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x], tile);
+                drawTile(cr, tileSet, x * 16 + BUFFER_X + tileSetData[tile][4], yOffset[x], tile, palette);
                 yOffset[x] += tileSetData[tile][3];
 
             }

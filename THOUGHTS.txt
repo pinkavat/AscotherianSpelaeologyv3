@@ -518,7 +518,33 @@
 
     Managed to rewrite evrything AND solve the failure with a bit of jiggering.
     TODO FOR NEXT TIME:
-        1) Ledge is fucked; assumptions mean that rect must manage its own edge. Give TL ledge an edge on the critside.
+        1) Ledge is fucked; assumptions mean that rect must manage its own edge. Give TL ledge an edge on the critside. (DONE!)
         2) Make testlake's gates in the middle (same for all truly amorphous parcels)
+
+===============================================================================
+    February 4
+
+    Thought of a couple refinements last night.
+        1) The need for a Puzzle-fail recursor loop (prototype pattern available); we can contextualize this with the ice puzzle generator, which is oozing to the frontburner.
+        2) Lake recursion. The "waterworld" idea is predicated on all the lakes being in the same grid (infeasible for the selector) so a separate waterworld unit is
+            in order, which will build waterworld grid patterns and feed them to the recursor.
+    
+    First, though, finish the post-proc.
+    ROCKSPRINKLING WITH QUEUE is THINFILLING -- *seed each tile with deterministic collapse chance so that it doesn't matter how many times we hit it*
+    OR only collapse in queue if deg-three (no check step needed there)
+    Algo:
+        For every unresolved:
+            Check nonwalk neighbors (what to do vis. water? It's more of a floor than a cliff for these purposes...)
+
+            Fetch rocksite validity and surrounding blockage count.
+            If three or greater, enqueue and move to queue step.
+            Otherwise:
+                Check rocksite validity. If valid:
+                    Decide whether to collapse based on surround count.
+
+            Deplete the queue, for each element:
+                If three or greater neighbors, collapse and enqueue unresolved neighbors.
+
+    The postproc's been whipped into shape. We'll get rid of the thinfiller.
 
 ===============================================================================

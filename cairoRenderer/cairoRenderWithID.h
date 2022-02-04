@@ -17,6 +17,6 @@
 *
 */
 
-void cairoRenderMap(struct ascoTileMap *map);
+void cairoRenderMap(struct ascoTileMap *map, int palette);
 
 #endif

@@ -5,7 +5,8 @@
 // See header for details
 
 
-///TODO: under consideration for replacement with general isolation fill
+
+
 // THINFILLING STEP
 // TODO document better
 // TODO migrate to own file?
@@ -51,8 +52,6 @@ void thinFillingStep(struct ascoTileMap *map){
 
     freeCoordQueue(queue);
 }
-
-
 
 
 
@@ -263,9 +262,9 @@ void inaccessibleCliffStep(struct ascoTileMap *map){
             }
         }
     }
+    freeCoordQueue(queue);
 
     // Second pass: replace all unconnected blockages with blank cliff
-    // TODO is it cheaper to enqueue rather than flag and secondpass? Is it safer?
     for(int y = 0; y < map->height - 1; y++){
         for(int x = 0; x < map->width - 1; x++){
             struct ascoCell *cell = &(mapCell(map, x, y));
@@ -278,74 +277,27 @@ void inaccessibleCliffStep(struct ascoTileMap *map){
             }
         }
     }
+
 }
 
 
 
 
-/* TODO doesn't really work
-// TODO document 
-// turns unresolveds to blockage at random based on their neighbors
-void rockSprinklingStep(struct ascoTileMap *map){
-    // Set up a coord queue
-    struct coordQueue *queue = newCoordQueue(16);    // TODO initial size...?
-
-    for(int y = 0; y < map->height; y++){
-        for(int x = 0; x < map->width; x++){
-            if(mapCell(map, x, y).tile == TILE_UNRESOLVED){
-                // If we flatten to blockage, we enqueue our neighbors; therefore start by enqueueing
-                enCoordQueue(queue, x, y);
-
-                int m, n;
-                while(deCoordQueue(queue, &m, &n)){
-
-                    // Count neighbor blockages: blockages are worth 2, unresolveds worth 1, blanks worth zero.
-                    int neighborValue = 0;
-                    if(n > 0) neighborValue += mapCell(map, m, n-1).tile == TILE_BLANK ? 0 : mapCell(map, m, n-1).tile == TILE_UNRESOLVED ? 1 : 2;
-                    if(m < map->width - 1) neighborValue += mapCell(map, m+1, n).tile == TILE_BLANK ? 0 : mapCell(map, m+1, n).tile == TILE_UNRESOLVED ? 1 : 2;
-                    if(n < map->height - 1) neighborValue += mapCell(map, m, n+1).tile == TILE_BLANK ? 0 : mapCell(map, m, n+1).tile == TILE_UNRESOLVED ? 1 : 2;
-                    if(m > 0) neighborValue += mapCell(map, m-1, n).tile == TILE_BLANK ? 0 : mapCell(map, m-1, n).tile == TILE_UNRESOLVED ? 1 : 2;
-
-                    // neighborValue should now lie between zero and eight; set the decision threshold accordingly
-                    // TODO for now it's linear; probably not the best
-                    int threshold = 5 * neighborValue;
-                    
-                    if(rand() % 80 < threshold){
-                        mapCell(map, m, n).tile = TILE_BLOCKAGE;
-
-                        // ...and enqueue neighbor UNRESOLVEDs
-                        if(n > 0 && mapCell(map, m, n-1).tile == TILE_UNRESOLVED) enCoordQueue(queue, m, n-1);
-                        if(m < map->width-1 && mapCell(map, m+1, n).tile == TILE_UNRESOLVED) enCoordQueue(queue, m+1, n);
-                        if(n < map->height-1 && mapCell(map, m, n+1).tile == TILE_UNRESOLVED) enCoordQueue(queue, m, n+1);
-                        if(m > 0 && mapCell(map, m-1, n).tile == TILE_UNRESOLVED) enCoordQueue(queue, m-1, n);
-                        
-                    }
-
-                }
-            }
-        }
-    }
-
-    freeCoordQueue(queue);
-}
-*/
 
 
 // Helper macro for isValidRockSite
-#define TILE_IS_FLOOR(t) ((t) == TILE_BLANK || (t) == TILE_UNRESOLVED)
+// TODO TILE_WATERhood is still under consideration. This macro needs to be more comprehensive. Perhaps better to detect what it can't adjoin?
+// TODO should really be data-driven from ascoTileMap; perhaps it's time we thought about traversibility properties of tiles...?
+#define TILE_IS_FLOOR(t) ((t) == TILE_BLANK || (t) == TILE_UNRESOLVED || (t) == TILE_WATER)
 
-// Code ported from AscoSpel v1 (I've forgotten how it works, which is a pity, because it's really cool)
+
+// Code ported from AscoSpel v1
 // Returns truth if
 //  a) a blockage tile can be legitimately placed at (x, y)
 //  b) placing a rock tile at (x, y) would leave the map topology unaltered (i.e. wouldn't block a path)
 //  returns falsehood otherwise
+// PRECONDITION: this function doesn't perform a bounds check, so all queried positions must be within a 1-tile margin from edge of map
 static unsigned int isValidRockSite(struct ascoTileMap *map, int x, int y){
-
-    // Initial assumption: blockage can't be placed on the map border (accelerates neighbor checks by removing bound checks)
-    // Also check if the site is UNRESOLVED
-    // TODO make function precondition for traversal (save checks all)
-    if(x <= 0 || x >= map->width || y <= 0 || y >= map->height || mapCell(map, x, y).tile != TILE_UNRESOLVED) return 0;
-
 
     // Gather together the Von Neumann neigborhood of the cell
     unsigned int neighborSet = 0;
@@ -359,7 +311,7 @@ static unsigned int isValidRockSite(struct ascoTileMap *map, int x, int y){
     if(neighborSet == 5 || neighborSet == 10) return 0;
 
     // AND the neighbor set with its right-rotation to determine if the putative rock will block access to anything
-    // (Copied from prototype -- I've lost the notes on how this works)
+    // (Copied from prototype -- the gist is that this is a check to see if there is a path "around the corner" of the tile)
     neighborSet = (neighborSet & (neighborSet >> 1 | ((neighborSet & 1) ? 8 : 0)));
 
     unsigned int cornerSet = 0;
@@ -376,58 +328,44 @@ static unsigned int isValidRockSite(struct ascoTileMap *map, int x, int y){
 
 
 
+
+
 // TODO document
-void fenceBreakingStep(struct ascoTileMap *map){
-    // Pass over twice to ensure fences are fully broken
-    for(int times = 0; times < 2; times++){
+void rockSprinklingStep(struct ascoTileMap *map, float blockageAdjacencyWeight, float cliffAdjacencyWeight, float blankAdjacencyWeight, float maxWeight){
 
-        for(int y = 1; y < map->height - 1; y++){
-            for(int x = 1; x < map->width - 1; x++){
-                if(mapCell(map, x, y).tile == TILE_BLOCKAGE){
-                    // If the cell is blockage, check to see if we can remove it
-                    
-                    // 1) Gather together Von Neumann neighborhood, clockwise from top.
-                    unsigned int neighborSet = 0;
+    // Iterate within a border to save on bounds-checking
+    for(int y = 1; y < map->height - 1; y++){
+        for(int x = 1; x < map->width - 1; x++){
+            if(mapCell(map, x, y).tile == TILE_UNRESOLVED && isValidRockSite(map, x, y)){
+                
+                // Is valid place to put rock
 
-                    if(TILE_IS_FLOOR(mapCell(map, x, y-1).tile)) neighborSet |= 1;
-                    if(TILE_IS_FLOOR(mapCell(map, x+1, y).tile)) neighborSet |= 2;
-                    if(TILE_IS_FLOOR(mapCell(map, x, y+1).tile)) neighborSet |= 4;
-                    if(TILE_IS_FLOOR(mapCell(map, x-1, y).tile)) neighborSet |= 8;
+                // Gather data about neighbor tiles to weight decision
+                float tileWeight = 0;
 
-                    // 2) If VN neighborhood has only one floor, it's safe to flatten this blockage
-                    if(neighborSet == 1 || neighborSet == 2 || neighborSet == 4 || neighborSet == 8){   // TODO cheaper check?
-                        mapCell(map, x, y).tile = TILE_UNRESOLVED;
-                        continue;
+                struct ascoCell *cells[4] = {&(mapCell(map, x, y-1)), &(mapCell(map, x-1, y)), &(mapCell(map, x+1, y)), &(mapCell(map, x, y+1))};
+
+                for(int i = 0; i < 4; i++){
+                    switch(cells[i]->tile){
+                        case TILE_BLOCKAGE: tileWeight = tileWeight + blockageAdjacencyWeight; break;
+                        case TILE_BLANK: tileWeight = tileWeight + blankAdjacencyWeight; break;
+                        case TILE_CLIFF:
+                            if(cells[i]->z == mapCell(map, x, y).z) tileWeight = tileWeight + cliffAdjacencyWeight;
+                        break;
                     }
-
-                    /* 
-                    // 3) If VN neighborhood has three floors, we have to check corners.
-                    if(neighborSet == 7 || neighborSet == 11 || neighborSet == 13 || neighborSet == 14){    // TODO cheaper check?
-
-                        // If two floor sides are connected by a nonfloor corner, we can't flatten.
-                        // bitwise-AND the neighbor set with its right-rotation; the bits that are lit are the corners (clockwise from TR) that join two floor edges
-                        neighborSet = (neighborSet & (neighborSet >> 1 | ((neighborSet & 1) ? 8 : 0)));
-
-                        // Amalgamate the corners
-                        unsigned int cornerSet = 0;
-                        cornerSet |= (!TILE_IS_FLOOR(mapCell(map, x+1, y-1).tile)) ? 1 : 0; 
-                        cornerSet |= (!TILE_IS_FLOOR(mapCell(map, x+1, y+1).tile)) ? 2 : 0; 
-                        cornerSet |= (!TILE_IS_FLOOR(mapCell(map, x-1, y+1).tile)) ? 4 : 0; 
-                        cornerSet |= (!TILE_IS_FLOOR(mapCell(map, x-1, y-1).tile)) ? 8 : 0;
-
-                        // bitwise-AND corner set and neighbor set; the bits lit are corners joining two floors that are themselves not floors.
-                        // If any such exist, we cannot flatten.
-                        if(!(neighborSet & cornerSet)){
-                            mapCell(map, x, y).tile = TILE_UNRESOLVED;
-                        }
-                    } 
-                    */
-                    
                 }
+                if(tileWeight < 0.1) continue;
+
+                
+                float tilePlacementProbability = ((float)tileWeight) / maxWeight;
+                
+                if(((float)rand() / (float)RAND_MAX) < tilePlacementProbability){
+                    mapCell(map, x, y).tile = TILE_BLOCKAGE;
+                }
+                
+               
             }
         }
-
-
     }
 }
 
@@ -435,7 +373,14 @@ void fenceBreakingStep(struct ascoTileMap *map){
 
 
 
-void alternativeFenceBreakingStep(struct ascoTileMap *map){
+
+
+
+
+
+
+// TODO document
+void fenceBreakingStep(struct ascoTileMap *map){
 
     // Iterate within a border to save on bounds-checking
     for(int y = 1; y < map->height - 1; y++){
@@ -477,8 +422,6 @@ void alternativeFenceBreakingStep(struct ascoTileMap *map){
 
 
 void tempPostProcess(struct ascoTileMap *map){
-    // 1) Thinfilling step
-    //thinFillingStep(map);
 
     // Compute isolation
     int isolation[map->height][map->width];
@@ -499,26 +442,17 @@ void tempPostProcess(struct ascoTileMap *map){
 
 
 
-    // 4) Rock sprinkling
-    //rockSprinklingStep(map);
-    /*
-    for(int y = 0; y < map->height; y++){
-        for(int x = 0; x < map->width; x++){
-            if(isValidRockSite(map, x, y) && !(rand() % 4)) mapCell(map, x, y).tile = TILE_ROCK_SMALL;
-        }
-    }
-    */
-    //printAscoTileMap(map);
-    //fenceBreakingStep(map);
 
 
-    alternativeFenceBreakingStep(map);
 
-    // TODO test this
-    thinFillingStep(map);
-    cliffOozeStep(map);
-    cliffOozeStep(map);
-    alternativeFenceBreakingStep(map);
+
+    //thinFillingStep(map); // TODO is thinfilling even necessary...?
+    //cliffOozeStep(map);
+    //cliffOozeStep(map);
+    fenceBreakingStep(map);
+
+    rockSprinklingStep(map, 1.0, 2.0, -1.0, 8.0);
+
 
     // 3) Flatten blockages atop cliffs to inaccessible cliff
     inaccessibleCliffStep(map);
@@ -542,11 +476,9 @@ void tempPostProcess(struct ascoTileMap *map){
         }
     }
 
-    // One final solve pass (join with accretor)
-    /* 
+    // One final solve pass (join with accretor) 
     for(int i = 0; i < map->width * map->height; i++){
         if(map->cells[i].tile == TILE_UNRESOLVED) map->cells[i].tile = TILE_BLANK;
-        if(map->cells[i].tile == TILE_BLOCKAGE) map->cells[i].tile = (rand() % 2) ? TILE_ROCK_SMALL : TILE_ROCK_TALL;
+        if(map->cells[i].tile == TILE_BLOCKAGE) map->cells[i].tile = (rand() % 4) ? TILE_ROCK_SMALL : TILE_ROCK_TALL;   // TODO better probs for tallrocks
     }
-    */
 }

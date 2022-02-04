@@ -20,12 +20,26 @@ void ledgeIdeator(struct parcel *parcel){
     parcel->flexX = 0.3;    // TODO choose a good flex value for ledges (perhaps even dependent on block orientation??)
     parcel->flexY = 0.3;
 
-    parcel->minWidth = (parcel->shape == TLS_SHAPE) ? (parcel->parameters.gateWidth + parcel->parameters.pathWidth + LEDGE_BLOCK_MIN_HEIGHT) :
-                        ((parcel->shape == I_SHAPE) ? (parcel->parameters.pathWidth + LEDGE_BLOCK_MIN_HEIGHT) : 
-                        max(parcel->parameters.pathWidth + 1 + LEDGE_BLOCK_MIN_WIDTH, parcel->parameters.gateWidth));  // All other cases malformed
-    parcel->minHeight = (parcel->shape == L_SHAPE) ? (1 + max(LEDGE_BLOCK_MIN_HEIGHT, parcel->parameters.gateWidth + 2)) : (
-                        (parcel->shape == TI_SHAPE) ? (parcel->parameters.gateWidth + 1 + LEDGE_BLOCK_MIN_HEIGHT) : max(parcel->parameters.gateWidth + 2,
-                        LEDGE_BLOCK_MIN_WIDTH));    // All other cases malformed
+    switch(parcel->shape){
+        case L_SHAPE:
+            parcel->minWidth = max(parcel->parameters.pathWidth + 1 + LEDGE_BLOCK_MIN_WIDTH, parcel->parameters.gateWidth);
+            parcel->minHeight = 1 + max(LEDGE_BLOCK_MIN_HEIGHT, parcel->parameters.gateWidth + 2);
+        break;
+        case I_SHAPE:
+            parcel->minWidth = parcel->parameters.pathWidth + LEDGE_BLOCK_MIN_HEIGHT;
+            parcel->minHeight = max(parcel->parameters.gateWidth + 2, LEDGE_BLOCK_MIN_WIDTH);
+        break;
+        case TLS_SHAPE:
+            parcel->minWidth = parcel->parameters.gateWidth + parcel->parameters.pathWidth + LEDGE_BLOCK_MIN_HEIGHT;
+            parcel->minHeight = max(parcel->parameters.gateWidth + 2, LEDGE_BLOCK_MIN_WIDTH + 1);
+        break;
+        // TODO TLT
+        case TI_SHAPE:
+            parcel->minWidth = max(parcel->parameters.pathWidth + 1 + LEDGE_BLOCK_MIN_WIDTH, parcel->parameters.gateWidth);
+            parcel->minHeight = parcel->parameters.gateWidth + 1 + LEDGE_BLOCK_MIN_HEIGHT;
+        break;
+        default: break; // All other cases malformed
+    }
 
     parcel->children = NULL;
     parcel->childCount = 0;
@@ -41,15 +55,26 @@ void ledgeIdeator(struct parcel *parcel){
 
 // Draws the "ledge core" of a ledge parcel. The core is a group of one or more ledges enforcing travel from the top of the core to the bottom.
 // TODO make more interesting
-static void drawLedgeBlock(struct ascoTileMap *map, struct gridTransform *t){
+static void drawLedgeBlock(struct ascoTileMap *map, struct gridTransform *t, int blockedLeft, int blockedRight){
     // Blank out floor
     struct ascoCell blankFloorCell = {TILE_BLANK, 4, 2, 0};
     fillRect(map, &blankFloorCell, t, 0, 0, t->width, t->height);
 
+    // TODO adjust handling for side blockages to eliminate blockage fencing
+
+    struct ascoCell tempFenceCell = {TILE_BLOCKAGE, 0, 0, 0};
+    if(blockedLeft){
+        fillRect(map, &tempFenceCell, t, 0, 0, 1, t->height - 1);
+    }
+    if(blockedRight){
+        fillRect(map, &tempFenceCell, t, t->width - 1, 0, 1, t->height - 1);
+    }
 
     // Every other row, draw a ledge
+    int ledgeStart = blockedLeft ? 1 : 0;
+    int ledgeWidth = blockedRight ? t->width - 1 : t->width;
     for(int i = 1; i < t->height - 1; i+=2){
-        drawLedge(map, t, 0, i, t->width, 1, 2);
+        drawLedge(map, t, ledgeStart, i, ledgeWidth, 1, 2);
     }
 }
 
@@ -82,14 +107,10 @@ void ledgeRealizer(void *context, struct parcel *parcel){
 
 
     gTInherit(&(parcel->transform), &(ledgeBlockTransform));
-    drawLedgeBlock(map, &ledgeBlockTransform);
+    drawLedgeBlock(map, &ledgeBlockTransform, (parcel->shape == L_SHAPE || parcel->shape == TI_SHAPE), (parcel->shape == TLS_SHAPE));
 
-    // If L or TI, draw a blockage shield to the left of the ledge
+    // If L or TI, add a walkway up top
     if(parcel->shape == L_SHAPE || parcel->shape == TI_SHAPE){
-        struct ascoCell blockageCell = {TILE_BLOCKAGE, 0, 0, 0};
-        fillRect(map, &blockageCell, &(parcel->transform), parcel->walkwayWidth, ledgeBlockY, 1, parcel->transform.height - ledgeBlockY);
-
-        //...and a walkway up top
         struct ascoCell walkwayCell = {TILE_BLANK, 0, 0, 0};
         fillRect(map, &walkwayCell, &(parcel->transform),
             parcel->walkwayWidth, 0, parcel->transform.width - parcel->walkwayWidth, ledgeBlockY);

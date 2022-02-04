@@ -166,7 +166,7 @@ int main(int argc, char **argv){
     
     // 9) Print/Render
     printAscoTileMap(map);
-    cairoRenderMap(map);
+    cairoRenderMap(map, 0);
 
     // 10) Clean up
     freeAscoTileMap(map);
