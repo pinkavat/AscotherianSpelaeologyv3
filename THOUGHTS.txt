@@ -6,6 +6,8 @@
         1) Grid Transform autoparent adjust thingy is buggy; transforming, interpreting, transforming, then interpreting again yields bad results.
             adjusting params of gT triggering a re-inherit MIGHT fix problem; or might exacerbate. Needs thinking. As stands, works, but fragile.
         2) We still don't have a satisfactory answer for that Jan 11 "Mystery Stochastic Segfault".
+            --> It happened again, Feb 4. I *think* it may be to do with uninitialized gate positions (?) hm.
+                (If so: it may be the walkway draw routine)
         3) TI-landing doesn't work because of the sheather. What to do?
             --> Here's your answer: make a "Landing TI" and wherever it's used the parcel leading into it is given gatesize at least 2
                 (we'll have to square it with the sheather though; the sheathing must be removed anyway)
@@ -546,5 +548,15 @@
                 If three or greater neighbors, collapse and enqueue unresolved neighbors.
 
     The postproc's been whipped into shape. We'll get rid of the thinfiller.
+
+
+    Rounded off the day by writing the Ice Puzzle generator. 
+    It still needs alternative fail-side (for fail-loops) and T-branching.
+    Also, it raises an interesting question about difficulty versus size: the puzzle scales with size, so a larger puzzle means a tougher challenge.
+    However, at minimum size the icefield is no challenge at all.
+    I therefore think a DYNAMIC MINIMUM might be in order: based on some parameter input, the parcel can essentially preset its size to be a specific length of
+    challenge. Think on't.
+    This is actually a close link to a more general problem: the relationship between RECURSIVE COMPLEXITY and SCALE.
+    Think on't further -- this is the good tuning stuff.
 
 ===============================================================================

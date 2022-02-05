@@ -89,6 +89,7 @@ enum ascoTileID {
     TILE_LEDGE,             // One-way hop-ledges. MS with terminii.
 
     TILE_WATER,             // A still pond with MS-tiling banks.
+    TILE_ICE,               // A slick ice tile (TODO MS Tiling?)
     
     TILE_ROCK_SMALL,        // A nontiling small boulder.
     TILE_ROCK_TALL,         // Ditto, but graphically different.

@@ -479,6 +479,7 @@ void tempPostProcess(struct ascoTileMap *map){
     // One final solve pass (join with accretor) 
     for(int i = 0; i < map->width * map->height; i++){
         if(map->cells[i].tile == TILE_UNRESOLVED) map->cells[i].tile = TILE_BLANK;
-        if(map->cells[i].tile == TILE_BLOCKAGE) map->cells[i].tile = (rand() % 4) ? TILE_ROCK_SMALL : TILE_ROCK_TALL;   // TODO better probs for tallrocks
+        //if(map->cells[i].tile == TILE_BLOCKAGE) map->cells[i].tile = (rand() % 4) ? TILE_ROCK_SMALL : TILE_ROCK_TALL;   // TODO better probs for tallrocks
+        if(map->cells[i].tile == TILE_BLOCKAGE) map->cells[i].tile = TILE_ROCK_SMALL;
     }
 }

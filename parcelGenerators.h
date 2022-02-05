@@ -38,6 +38,8 @@
 
 #include "parcelGenerators/DFSMaze.h"
 
+#include "parcelGenerators/icePuzzle.h"
+
 #include "parcelGenerators/lockSmash.h"
 
 #include "parcelGenerators/testLake.h"

@@ -117,10 +117,12 @@ static const int tileSetData[][7] = {
     {205, 47, 17, 29,   0,  -17, 13},// 72: NPC Down-facing
     {205, 76, 17, 29,   0,  -17, 13},// 73: NPC Left-facing
 
+    {112, 105, 16, 12,   0, 0, 0},    // 74: Ice
 };
 
 
 static int tileMapToImageData(struct ascoCell cell){
+    // TODO convert to switch
     if(cell.tile == TILE_VOID) return 0;
     if(cell.tile == TILE_UNKNOWN) return 39;
     if(cell.tile == TILE_UNRESOLVED) return 44;
@@ -159,6 +161,8 @@ static int tileMapToImageData(struct ascoCell cell){
 
     if(cell.tile == TILE_ITEM_PLACEHOLDER) return 69;
     if(cell.tile == TILE_NPC_PLACEHOLDER) return 70 + cell.rotation;
+
+    if(cell.tile == TILE_ICE) return 74;
 
     return 39;
 }

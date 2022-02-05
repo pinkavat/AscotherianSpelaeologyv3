@@ -28,7 +28,7 @@ int main(int argc, char **argv){
     srand(seed);
 
 
-
+    /*
     // 0) Pattern prob table
     #define TABLE_LENGTH 3
     int tableWeights [TABLE_LENGTH][NUM_PATTERN_TYPES] = {
@@ -41,9 +41,19 @@ int main(int argc, char **argv){
         tableWeights,
         TABLE_LENGTH
     };
-
-
+    
+   */ 
+    #define TABLE_LENGTH 0
+    int tableWeights [TABLE_LENGTH][NUM_PATTERN_TYPES] = {
+    };
+    struct patternProbabilityTable probTable = {
+        tableWeights,
+        TABLE_LENGTH
+    };
      
+    
+
+
     // 1) Sample grid signature
    
     /*
@@ -108,7 +118,7 @@ int main(int argc, char **argv){
     jimmy.parameters.gateWidth = 2;
     jimmy.parameters.patternProbabilities = &probTable;
     
-    jimmy.parameters.obligates = (struct obligate[]){{ (void(*)(void *))&NPCEncounterIdeator },{ (void(*)(void *))&NPCEncounterIdeator }};
+    jimmy.parameters.obligates = (struct obligate[]){{ (void(*)(void *))&icePuzzleIdeator },{ (void(*)(void *))&NPCEncounterIdeator }};
     jimmy.parameters.obligatesCount = 2;
 
     recursorGridIdeator(&jimmy, &gridSig);
@@ -120,8 +130,8 @@ int main(int argc, char **argv){
     //printf("Ideated! %d, %d\n%f, %f\n", jimmy.minWidth, jimmy.minHeight, jimmy.flexX, jimmy.flexY);
 
     // 3) Set target dimensions
-    int targetWidth = 1;
-    int targetHeight = 1;
+    int targetWidth = 20;
+    int targetHeight = 20;
     jimmy.transform.width = (jimmy.minWidth > targetWidth) ? jimmy.minWidth : targetWidth;
     jimmy.transform.height = (jimmy.minHeight > targetHeight) ? jimmy.minHeight : targetHeight;
     jimmy.transform.x = 2;  // Sheath outer comp.
@@ -166,7 +176,7 @@ int main(int argc, char **argv){
     
     // 9) Print/Render
     printAscoTileMap(map);
-    cairoRenderMap(map, 0);
+    cairoRenderMap(map, (argc > 2) ? atoi(argv[2]): 0);
 
     // 10) Clean up
     freeAscoTileMap(map);

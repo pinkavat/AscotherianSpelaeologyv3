@@ -5,6 +5,7 @@
 
 #define PRINT_COLOUR_ROCK "\e[38;5;94m"
 #define PRINT_COLOUR_WATER "\e[38;5;33m\e[48;5;20m"
+#define PRINT_COLOUR_ICE "\e[38;5;255m\e[48;5;51m"
 
 struct ascoTile ascoTiles[] = {
     {"Tile_Void",       "  ", "\e[0m",                  ASCO_TILING_NONE},
@@ -19,6 +20,7 @@ struct ascoTile ascoTiles[] = {
     {"Tile_Ledge",      "!!", "\e[1m\e[38;5;7m",        ASCO_TILING_MS},
 
     {"Tile_Water",      "~~", PRINT_COLOUR_WATER,       ASCO_TILING_MS},
+    {"Tile_Ice",        "//", PRINT_COLOUR_ICE,         ASCO_TILING_NONE},  // TODO MS-tiling...?
 
     {"Tile_Rock_Small", "/\\",PRINT_COLOUR_ROCK,        ASCO_TILING_NONE},
     {"Tile_Rock_Tall",  "/\\",PRINT_COLOUR_ROCK,        ASCO_TILING_NONE},
