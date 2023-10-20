@@ -12,8 +12,8 @@ void doorIdeator(struct parcel *parcel){
     parcel->data = NULL;
     parcel->transform = newGridTransform();
 
-    parcel->flexX = 0.0;    // If we hit this base case we don't want to make it any more obvious
-    parcel->flexY = 0.0;    //  hence it doesn't want to grow any bigger
+    parcel->flexX = 0.0;    // Doors don't grow
+    parcel->flexY = 0.0;
 
     parcel->minWidth = parcel->parameters.pathWidth + 1;
     parcel->minHeight = parcel->parameters.gateWidth + 2;   // Guaranteed to be at least 3 then

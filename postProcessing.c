@@ -6,7 +6,7 @@
 
 
 
-
+/*
 // THINFILLING STEP
 // TODO document better
 // TODO migrate to own file?
@@ -52,7 +52,7 @@ void thinFillingStep(struct ascoTileMap *map){
 
     freeCoordQueue(queue);
 }
-
+*/
 
 
 // TODO document
@@ -99,6 +99,18 @@ void computeIsolation(struct ascoTileMap *map, int *isolationMap){
 
     freeCoordQueue(queue);
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -211,6 +223,66 @@ void cliffOozeStep(struct ascoTileMap *map){
         }
     }
 }
+
+
+// WATER CONNECTION STEP: relies on MS data (place in ascotilemap...?)
+// TODO document
+// TODO fold with Cliff Oozing: it's the same initial process
+void connectLakes(struct ascoTileMap *map){
+
+    for(int y = 0; y < map->height - 1; y++){
+        for(int x = 0; x < map->width - 1; x++){
+            // Algorithm checks 2x2 grids of tiles; therefore, traversal never touches last row or column
+ 
+            struct ascoCell *a = &(mapCell(map, x, y));
+            struct ascoCell *b = &(mapCell(map, x+1, y));
+            struct ascoCell *c = &(mapCell(map, x, y+1));
+            struct ascoCell *d = &(mapCell(map, x+1, y+1));
+
+            if(a->tile == TILE_WATER && b->tile == TILE_WATER && c->tile == TILE_WATER && d->tile == TILE_WATER){
+                // If all four cells in the 2x2 region are water
+
+                // Fetch the Marching squares representation of all four cells
+                uint8_t aMS = MSFromVariantRotation[a->variant][a->rotation];
+                uint8_t bMS = MSFromVariantRotation[b->variant][b->rotation];
+                uint8_t cMS = MSFromVariantRotation[c->variant][c->rotation];
+                uint8_t dMS = MSFromVariantRotation[d->variant][d->rotation];
+
+                
+                // Set the Marching squares height corner at the center of the region to 0
+                aMS = aMS & ~2;
+                bMS = bMS & ~1;
+                cMS = cMS & ~4;
+                dMS = dMS & ~8;
+
+                // If this results in an illegal "saddle" configuration, stop.
+                if(!(bMS == 5 || dMS == 10)){
+                    // Otherwise writeback
+                    struct ascoCell *cells[4] = {a, b, c, d};
+                    const uint8_t MSVals[4] = {aMS, bMS, cMS, dMS};
+                
+                    for(int i = 0; i < 4; i++){
+                        cells[i]->variant = variantFromMS[MSVals[i]];
+                        cells[i]->rotation = rotationFromMS[MSVals[i]];
+                    }
+
+                }
+            }
+
+
+        }
+    }
+
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -422,6 +494,10 @@ void fenceBreakingStep(struct ascoTileMap *map){
 
 
 void tempPostProcess(struct ascoTileMap *map){
+    
+    // Connect lakes
+    connectLakes(map);
+
 
     // Compute isolation
     int isolation[map->height][map->width];
@@ -459,7 +535,7 @@ void tempPostProcess(struct ascoTileMap *map){
 
 
 
-    // Temp large rock accretion step (only operating on oozed cliffs for now)
+    // Temp large rock accretion step (TODO: only operating on oozed cliffs for now; must include 2x2 rocks)
     for(int y = 0; y < map->height - 1; y++){
         for(int x = 0; x < map->width - 1; x++){
             if( 

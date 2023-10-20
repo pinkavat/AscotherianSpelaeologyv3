@@ -28,21 +28,21 @@ int main(int argc, char **argv){
     srand(seed);
 
 
-    /*
+    
     // 0) Pattern prob table
-    #define TABLE_LENGTH 3
+    #define TABLE_LENGTH 2
     int tableWeights [TABLE_LENGTH][NUM_PATTERN_TYPES] = {
         //Term  Length   Void    Fork   SLedge  Pledge  Fflange Rflange  Bridge 
-        {   0,      0,      1,      0,      1,      0,      0,      0,      0},
-        {   0,      1,      1,      0,      4,      0,      0,      0,      0},
-        {   2,      0,      1,      0,      0,      0,      0,      0,      0}
+        {   1,      1,      1,      0,      1,      0,      0,      0,      0},
+        {   2,      1,      0,      0,      0,      0,      0,      0,      0},
     };
     struct patternProbabilityTable probTable = {
         tableWeights,
         TABLE_LENGTH
     };
     
-   */ 
+   
+    /* 
     #define TABLE_LENGTH 0
     int tableWeights [TABLE_LENGTH][NUM_PATTERN_TYPES] = {
     };
@@ -50,8 +50,7 @@ int main(int argc, char **argv){
         tableWeights,
         TABLE_LENGTH
     };
-     
-    
+    */
 
 
     // 1) Sample grid signature
@@ -87,13 +86,31 @@ int main(int argc, char **argv){
     */
 
 
+    struct recursorGridSignature gridSig = {
+        4, 3,
+        (enum parcelShapes[12]){V_SHAPE, L_SHAPE, I_SHAPE, E_SHAPE,     L_SHAPE, TLS_SHAPE, E_SHAPE, V_SHAPE,       L_SHAPE, E_SHAPE, V_SHAPE, V_SHAPE},
+        (cellPopulatorFunctionPtr[12]){ &voidBubbleIdeator, &selectAndApplyParcelGenerator, &selectAndApplyParcelGenerator, &ladderUpIdeator,
+                                        &selectAndApplyParcelGenerator, &ledgeIdeator, &ladderUpIdeator, &voidBubbleIdeator,
+                                        &selectAndApplyParcelGenerator, &ladderDownIdeator, &voidBubbleIdeator, &voidBubbleIdeator
+                                        },
+        (unsigned int[12]){0, 3, 0, 0,  3, 2, 0, 0,  2, 0, 0, 0},
+        (unsigned int[12]){0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0},
+        (unsigned int[12]){0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0},
+        (int[12]){TERMINAL, -3, -4, TERMINAL,       -2, TERMINAL, TERMINAL, TERMINAL,       -1, TERMINAL, TERMINAL, TERMINAL},
+        {0, 0, 0, 0},
+        {0, 0, 0, 0}
+    };
 
+    
+
+
+    /*
     enum parcelShapes shapes[3] = {E_SHAPE, I_SHAPE, E_SHAPE};
     unsigned int rotations[3] = {2, 0, 0};
     unsigned int flipHs[3] =    {0, 0, 0};
     unsigned int flipVs[3] =    {0, 0, 0};
     int divTypes[3] = {TERMINAL, -1, TERMINAL}; // Middle one's on the critpath
-    cellPopulatorFunctionPtr popFuncs[3] = {&doorIdeator, &selectAndApplyParcelGenerator, &doorIdeator};
+    cellPopulatorFunctionPtr popFuncs[3] = {&ladderUpIdeator, &selectAndApplyParcelGenerator, &pitIdeator};
     
     struct recursorGridSignature gridSig = {
         3, 1,
@@ -106,7 +123,7 @@ int main(int argc, char **argv){
         {0, 0, 0, 0},
         {0, 0, 0, 0}
     };
-
+    */
     
     
 
@@ -118,7 +135,7 @@ int main(int argc, char **argv){
     jimmy.parameters.gateWidth = 2;
     jimmy.parameters.patternProbabilities = &probTable;
     
-    jimmy.parameters.obligates = (struct obligate[]){{ (void(*)(void *))&icePuzzleIdeator },{ (void(*)(void *))&NPCEncounterIdeator }};
+    jimmy.parameters.obligates = (struct obligate[]){{ (void(*)(void *))&lockSmashIdeator },{ (void(*)(void *))&NPCEncounterIdeator }};
     jimmy.parameters.obligatesCount = 2;
 
     recursorGridIdeator(&jimmy, &gridSig);

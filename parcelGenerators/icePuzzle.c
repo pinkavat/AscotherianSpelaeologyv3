@@ -3,7 +3,17 @@
 // icePuzzle.c
 // See header for details
 
+//   TODO FUTURE ME, IF YOU'RE READING THIS TO POACH THE ALGORITHM:
+//       REMEMBER ICEFALL CAVE -- where PITS LEAD TO SPECIAL ICE LANES. ADD THIS
+/*
+    ALSO: further considerations for ice puzzles:
+        1) Multipaths (generalized form of icefall)
+        2) Out-of-phase validity proof 
+        3) Failsides
+        4) Obstacle surrounding (horizontal-vertical line matching)
+        5) Aligning a strength boulder to stop at correct output edge (seafoams)
 
+*/
 
 void icePuzzleIdeator(struct parcel *parcel){
 
@@ -114,7 +124,7 @@ void icePuzzleRealizer(void *context, struct parcel *parcel){
 
             // If we've placed a stop that the player could "skip" to, lay down a blockage preventing this
             // TODO this op is sensitive to the direction of the fail drain; when we add variable fail drains we need to change this
-            if(oldX < stopX && yIndex > 0) placeCell(map, &perimeterCell, &(parcel->transform), parcel->walkwayWidth + 1, stopY);
+            if(yIndex > 0) placeCell(map, &perimeterCell, &(parcel->transform), parcel->walkwayWidth + 1, stopY);
 
             yIndex++;
         }

@@ -1,21 +1,21 @@
 
-#include "testLake.h"
-// testLake.c
+#include "lake.h"
+// lake.c
 // See header for details
 
 
-void testLakeIdeator(struct parcel *parcel){
+void lakeIdeator(struct parcel *parcel){
 
     // Ignore shape and parameters completely
     
-    parcel->realizer = &testLakeRealizer;
+    parcel->realizer = &lakeRealizer;
     parcel->data = NULL;
     parcel->transform = newGridTransform();
 
     parcel->flexX = 1.0;    // Test lake absolutely wants to resize as much as possible
     parcel->flexY = 1.0;
 
-    parcel->minWidth = parcel->parameters.gateWidth + 3;   // Initial dimensions are minimal (width is walkway-inclusive) TODO assumptionbased
+    parcel->minWidth = parcel->parameters.gateWidth + 3;   // Initial dimensions are minimal (width is walkway-inclusive)
     parcel->minHeight = parcel->parameters.gateWidth + 2;  // Height is NOT shield-inclusive, shields are optional
 
     parcel->children = NULL;
@@ -28,21 +28,22 @@ void testLakeIdeator(struct parcel *parcel){
 }
 
 
-void testLakeRealizer(void *context, struct parcel *parcel){
+void lakeRealizer(void *context, struct parcel *parcel){
     // Cast context
     struct ascoTileMap *map = ((struct ascoGenContext *)context)->map;
 
 
-
-    parcel->walkwayWidth = 1;
+    // Walkway is zero due to waterworld assumptions
+    parcel->walkwayWidth = 0;
     parcel->shieldHeight = 0;
 
     // Draw lake core
     struct ascoCell lakeCell = {TILE_WATER, 0, 0, 0};
     fillRectAuto(map, &lakeCell, &(parcel->transform), 
-        parcel->walkwayWidth, 0, parcel->transform.width - parcel->walkwayWidth, parcel->transform.height, 1); 
+        parcel->walkwayWidth, 0, parcel->transform.width, parcel->transform.height, 1); 
 
 
+    // TODO gates centered
     parcel->gates[0].position = parcel->transform.height - parcel->parameters.gateWidth - 1;
     parcel->gates[0].size = selfHasGate(parcel->shape, 0) ? parcel->parameters.gateWidth : 0;
     parcel->gates[1].position = parcel->transform.width - parcel->parameters.gateWidth - 1;

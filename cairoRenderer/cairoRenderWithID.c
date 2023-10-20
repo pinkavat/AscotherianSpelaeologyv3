@@ -154,7 +154,8 @@ static int tileMapToImageData(struct ascoCell cell){
     if(cell.tile == TILE_ROCK_LARGE) return (cell.rotation == 3) ? 17 : 13;
 
     if(cell.tile == TILE_DOOR) return 22 + cell.rotation;   // TODO interior vs exterior
-    if(cell.tile == TILE_LADDER) return 46;                 // TODO ascending vs descending
+    if(cell.tile == TILE_LADDER) return 47 - cell.variant;
+    if(cell.tile == TILE_PIT) return (cell.variant) ? 13 : 48;  // TODO landing tile
 
     if(cell.tile == TILE_ROCK_SMASH) return 67;
     if(cell.tile == TILE_ROCK_STRENGTH) return 68;

@@ -96,7 +96,8 @@ enum ascoTileID {
     TILE_ROCK_LARGE,        // A 2x2 tile with a larger boulder.
 
     TILE_DOOR,              // A doorway (TODO: interior vs exterior; as variant??)
-    TILE_LADDER,            // A ladder (TODO: up vs down; as variant? Incorporate pit?)
+    TILE_LADDER,            // A ladder; variant defines direction (0 is down [falling], 1 is up [rising])
+    TILE_PIT,               // A pit; variant defines direction (0 is a pit, 1 is a pit-landing)
 
     TILE_ROCK_SMASH,        // Smashable rock.
     TILE_ROCK_STRENGTH,     // Pushable rock.

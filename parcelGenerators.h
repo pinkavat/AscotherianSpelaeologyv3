@@ -36,13 +36,15 @@
 
 #include "parcelGenerators/door.h"
 
+#include "parcelGenerators/ladderAndPit.h"
+
 #include "parcelGenerators/DFSMaze.h"
 
 #include "parcelGenerators/icePuzzle.h"
 
 #include "parcelGenerators/lockSmash.h"
 
-#include "parcelGenerators/testLake.h"
+#include "parcelGenerators/lake.h"
 
 #include "parcelGenerators/NPCEncounter.h"
 

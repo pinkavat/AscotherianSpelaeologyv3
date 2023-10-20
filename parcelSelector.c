@@ -274,7 +274,7 @@ void selectAndApplyParcelGenerator(struct parcel *parcel){
     }
 
     // c) If we have no obligates, TODO
-    testLakeIdeator(parcel);
+    lakeIdeator(parcel);
 
     
     /*

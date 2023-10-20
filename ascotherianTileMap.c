@@ -28,6 +28,7 @@ struct ascoTile ascoTiles[] = {
 
     {"Tile_Door",       "Do", "\e[1m\e[38;5;154m",      ASCO_TILING_ROTOR},
     {"Tile_Ladder",     "HH", "\e[1m\e[38;5;154m",      ASCO_TILING_NONE},
+    {"Tile_Pit",        "[]", "\e[1m\e[38;5;154m",      ASCO_TILING_NONE},
 
     {"Tile_Rock_Smash",     "{}", "\e[1m\e[38;5;184m",  ASCO_TILING_NONE},
     {"Tile_Rock_Strength",  "()",",\e[1m\e[38;5;250m",  ASCO_TILING_NONE},
@@ -180,24 +181,31 @@ void printAscoTileMap(struct ascoTileMap *map){
 
             printf("%s%s", (x + y) % 2 ? PRINT_COLOUR_BACKGROUND_1 : PRINT_COLOUR_BACKGROUND_2, ascoTiles[cell.tile].debugColour);
 
-            // TODO switch to switch!
-            if(cell.tile == TILE_STAIR){
-                // Stairs get special graphics
-                printf("%s\e[0m", stairGraphics[cell.rotation]);
-            } else if(cell.tile == TILE_DOOR){
-                // Doors get special graphics
-                printf("%s\e[0m", doorGraphics[cell.rotation]);
-            } else if(cell.tile == TILE_NPC_PLACEHOLDER){
-                // NPCs get special graphics
-                printf("%s\e[0m", NPCGraphics[cell.rotation]);
-            } else if(cell.tile == TILE_ROCK_LARGE){
-                // Large Rocks get special graphics
-                printf("\e[1m%s\e[0m", largeRockGraphics[cell.rotation]);
-            } else if(ascoTiles[cell.tile].tilingType == ASCO_TILING_MS && cell.variant > 0){
-                // MS-tile border
-                printf("%s\e[0m", MSGraphics[cell.variant - 1][cell.rotation]);
-            } else {
-                printf("%s\e[0m", ascoTiles[cell.tile].debugPrint);
+            switch(cell.tile){
+                case TILE_STAIR:
+                    // Stairs get special graphics
+                    printf("%s\e[0m", stairGraphics[cell.rotation]);
+                break;
+                case TILE_DOOR:
+                    // Doors get special graphics
+                    printf("%s\e[0m", doorGraphics[cell.rotation]);
+                break;
+                case TILE_NPC_PLACEHOLDER:
+                    // NPCs get special graphics
+                    printf("%s\e[0m", NPCGraphics[cell.rotation]);
+                break;
+                case TILE_ROCK_LARGE:
+                    // Large Rocks get special graphics
+                    printf("\e[1m%s\e[0m", largeRockGraphics[cell.rotation]);
+                break;
+                default:
+                    if(ascoTiles[cell.tile].tilingType == ASCO_TILING_MS && cell.variant > 0){
+                        // MS-tile border
+                        printf("%s\e[0m", MSGraphics[cell.variant - 1][cell.rotation]);
+                    } else {
+                        printf("%s\e[0m", ascoTiles[cell.tile].debugPrint);
+                    }
+                break;
             }
         }
         printf("\e[0m\n");

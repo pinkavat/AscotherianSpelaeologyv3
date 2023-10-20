@@ -1,7 +1,9 @@
 # Old Code/notes #
 ##################
 
+experimental/
 legacy/
+THOUGHTS.txt
 
 
 # Program Output #
@@ -9,3 +11,4 @@ legacy/
 
 cave.png
 *.out
+.DS_Store

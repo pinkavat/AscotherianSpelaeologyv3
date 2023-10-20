@@ -83,10 +83,4 @@ void divideParametersByGrid(struct parcelGenParameters *sourceParameters, const 
         Generate shortcut and flange parameter sets for division even if there are no children to divide them among...?
     */
 
-    /*
-        SERIAL CRITPATH CONCEPT:
-        Input: array of obligates of known length L
-        Each child [index i] in set of size n gets subarray of length (L / n) + (i < L % n) ? 1 : 0   (Not tested)
-    */
-
 }

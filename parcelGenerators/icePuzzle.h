@@ -12,7 +12,10 @@
 *   Description:
 *       The AscoSpel v3 version of the basic shuffled-line based slippery-surface puzzle generator.
 *
-* written January 2022
+*   TODO FUTURE ME, IF YOU'RE READING THIS TO POACH THE ALGORITHM:
+*       REMEMBER ICEFALL CAVE -- where PITS LEAD TO SPECIAL ICE LANES. ADD THIS
+*
+* written February 2022
 */
 
 // ========== DATA STRUCT ==========
